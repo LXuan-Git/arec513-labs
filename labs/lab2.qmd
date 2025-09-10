@@ -1,0 +1,508 @@
+---
+title: "Lab 2: Data Manipulation and Visualization"
+author: "Feng Qiu, Liyuan Xuan"
+date: "Sept 22, 2025"
+format:
+  html:
+    toc: true
+    toc-title: "Section"
+---
+ 
+In Lab 1, we briefly introduced what packages are in R and one specific package *tidyverse*. If you wish to learn more about *tidyverse*, [click here for more information](https://www.tidyverse.org/). Lab 2 will focus on two packages that are included in *tidyverse*:
+
+1. *dplyr* for data manipulation
+
+2. *ggplot* for data visualization
+
+But first, remember to load the package.
+
+```{r}
+# install.packages("tidyverse")     # install if needed
+library(tidyverse)
+```
+
+## Data Manipulation using dplyr
+
+### What is a tidy data set?
+
+Tidy data is a standard way of mapping the meaning of a dataset to its structure. A dataset is messy or tidy depending on how rows, columns and tables are matched up with observations, variables and types. Three rules make a data tidy:
+
+1. Each variable must have its own column
+
+2. Each observation must have its own row
+
+3. Each value must have its own cell
+
+### Create a farm business data set
+
+```{r}
+# farmers' info
+name <- c("Henry", "Larry", "Alex", "Gaby", "Amy", "Ruby")
+sex <- c("male", "male", "male", "female", "female", "female")
+age <- c(43, 60, 25, 50, 28, 58)
+
+# types of farm
+type <- c("crop", "livestock", "urban", "dairy", "crop", "livestock")
+
+# size of farm in acres
+size <- c(550, 800, 10, 600, 1000, 700)
+
+# net annual cash return from ag businesses, in $1000
+return <- c(40, 90, 50, 90, 90, 95)
+
+# combine the variables together as a data frame
+farm <- data.frame(name, age, sex, type, size, return)
+farm
+
+# glimpse the data set
+glimpse(farm)
+```
+
+### Important Functions in dplyr
+
+There are six important functions in *dplyr* are:
+
+1. `select()`: pick variables by their names
+
+2. `filter()`: pick observations by their values
+
+3. `arrange()`: reorder the rows
+
+4. `mutate()`: create new variables with functions of existing variables
+
+5. `summarize()`: collapse many values down to a single summary
+
+6. `group_by()`: groups data by one or more variables, allowing subsequent operations to be applied independently to each group
+
+Combining with the pipe operator `%>%`, *dplyr* can make data manipulation simple and intuitive.
+
+:::callout-tip
+You can always type "?FUNCTION_NAME" in the Console pane to check the R Documentation for the function. Try `?select`.
+:::
+
+#### `select()`
+
+`select()` allows you to focus on the variables you’re interested in. 
+
+```{r}
+select(farm, c(type, size, return))     # select farm type, size and return
+select(farm, sex:size)      # select everything between sex and size
+select(farm, -name)     # select everything but names
+```
+
+#### `filter()`
+
+`filter()` allows you to subset observations based on their values.
+
+```{r}
+filter(farm, size > 500)      # select farms with size > 500
+filter(farm, size > 500 & sex == "female")      # select farms with size > 500 AND owned by female farmers
+```
+
+#### `arrange()`
+
+`arrange()` orders the observations by one or more variables. Basically, it changes the order of rows.
+
+```{r}
+arrange(farm, size)      # order the data set by farm size, by default, in ascending order
+arrange(farm, desc(size))      # change the ordering to descending
+```
+
+#### `mutate()`
+
+`mudate()` modifies existing variables or adds new variables.
+
+```{r}
+mutate(farm, return = return * 1000)
+mutate(farm, age.sq = age ^ 2)
+mutate(farm, per.acre.return = return / size)
+
+# Or, you can do all three in one step
+mutate(farm,
+  return = return * 1000, 
+  age.sq = age ^ 2,
+  per.acre.return = return / size
+)
+
+# change the classes of variables
+glimpse(farm)      # view the data before changes
+farm2 <- mutate(farm,
+                sex = as.factor(sex), 
+                type = as.factor(type), 
+                age = as.integer(age)
+         )
+glimpse(farm2)       # view the data after changes
+
+```
+
+The function `else()` is often used in data manipulation, which assigns values to a variable based on whether a condition is satisfied.
+
+```{r}
+mutate(farm,
+       size2 = ifelse(size > 600, "big", "small"),   
+       dummy_urban = ifelse(type == "urban", 1, 0)      # when testing for equality, use double ==
+)
+```
+
+:::callout-caution
+## Exercise
+Generate a new variable called **size3** that meets the following criterion: 
+
+- size3 = “small” if size <= 200
+- size3 = “median” if 200 < size <= 600
+- size3 = “big” if size > 600
+
+Finally, convert **size3** to a factor variable.
+:::
+
+#### `summarize()`  
+
+`summarize()` provides summary statistics, which always produce one single row if there are no grouping variables.
+
+```{r}
+summarize(farm, tot.return = sum(return))
+summarize(farm, avg.return = mean(return))
+summarize(farm,
+          youngest = min(age),
+          oldest = max(age),
+          median = median(age),
+          cor.size.return = cor(size, return))
+```
+:::callout-tip
+It is often the case that we wish to know the summary statstics by a certain groups, e.g. average return by gender. Therefore, the use of `summarize()` is usually combined with `group_by()` and the pipe operator `%>%`.
+:::
+
+#### `group_by()` and `%>%`
+
+##### `group_by()`
+
+`group_by()` groups data by named variables, the use of `group_by()` itself does not change any variables, but only re-order the data, simlar to `arrange()`.
+
+```{r}
+group_by(farm, sex)
+```
+
+
+##### `%>%`
+
+However, then main purpose of `group_by()` is to group your data to perform following operation. To achieve this, you will also need the pipe operator `%>%`. Functioning like pipes, `%>%` uses the output of one function as the input to the next function.
+
+Suppose you wish to perform the steps below, based on the data **farm**:
+
+1. calculate the return per acre, called "per.acre.return"
+2. keep only the farms that are owned by farmers above 40 years old
+3. create a new data frame only contains: names and age of the farmers, and the return per acre
+
+```{r}
+### without %>%
+farm_wo_pipe1 <- mutate(farm, per.acre.return = return / size)
+farm_wo_pipe2 <- filter(farm_wo_pipe1, age > 40)
+farm_wo_pipe3 <- select(farm_wo_pipe2, c(name, age, per.acre.return))
+farm_wo_pipe3
+
+### with %>%
+
+farm_w_pipe <- farm %>% mutate(per.acre.return = return / size) %>%
+                        filter(age > 40) %>%
+                        select(name, age, per.acre.return)
+farm_w_pipe
+
+```
+
+##### Combining `group_by()` with `%>%`
+
+Now, let's calculate summary statistics by groups, using `group_by()` with `%>%`.
+
+```{r}
+farm %>% group_by(sex) %>% summarize(num.farmer = n(),
+                                     youngest = min(age),
+                                     oldest = max(age),  
+                                     
+                                     tot.return = sum(return),
+                                     avg.return = mean(return),
+                                     avg.per.acre.return = mean(return/size),
+                                     avg.size = mean(size))
+```
+
+:::callout-caution
+## Exercise
+Generate the following summary statistics, for each type of the farms:
+
+1. the sum of all returns, called **tot.return**
+2. the average returns, called **avg.return**
+
+Finally, rearrange the data based on the value of avg.return, in the descending order.
+:::
+
+#### Other Functions/Verbs
+
+##### `slice()` and Its Variants
+ 
+You can use `slice()` to select rows by position, or it variants
+
+- `slice_head()` and `slice_tail()`: to select first/last rows
+- `slice_min()` and `slice_max()`: to select rows with minimum/maximum values
+- `slice_sample()`: to select random samples 
+
+```{r}
+farm
+farm %>% slice(3)     # pick the observation in row 3
+farm %>% slice(1:3)     # pick observations from row 1 through row 3
+farm %>% slice_head(n = 3)      # pick first 3 rows, slice_tail would pick the last 3 rows
+farm %>% slice_min(age, n = 3)      # pick 3 rows with the youngest ages, slice_max would pick 3 rows with the largest ages
+
+farm %>% slice_sample(n = 3)      # randomly pick 3 observations 
+farm %>% slice_sample(prop = 0.5)     # randomly pick 50% of the data 
+```
+
+##### `count()` 
+
+`count()` counts the number of observations for each category.
+
+```{r}
+count(farm)     # count the number of observations
+count(farm, type)     # count observations per type of farm
+count(farm, type, order = TRUE)     # add argument for order
+count(farm, type, wt = return, sort = TRUE)     # add argument for weight
+```
+### Export and Import Data
+
+This section introduces functions in base R allowing you to export your data for later usage or import your saved data. To learn more about import/export data, check out this [link](https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/read.table). 
+
+#### RData Format
+
+```{r}
+#| eval: FALSE
+### export 
+save(farm, file = "farm.Rdata")     # save to the current working directory
+# specify the file path if you wish to save to a different location
+
+### import
+load("farm.Rdata")      # load from the current working directory
+# specify the file path if your file is loaded 
+```
+
+#### csv Format
+
+```{r}
+#| eval: FALSE
+### export
+write.csv(farm, "farm.csv")
+
+### import
+farm <- read.csv("farm.csv")
+```
+
+#### Other Format
+
+If you are working with SPSS, Stata or SAS data files, *haven* is a good package for importing and exporting files of those formats.  
+
+:::callout-tip
+A handy trick to import data interactively, without the need of specifying a path, try `read.csv(file.choose())`.
+:::
+
+### Useful Resources
+
+#### dplyr Cheat Sheet
+ 
+[Click here for more information](https://github.com/rstudio/cheatsheets/blob/main/data-transformation.pdf) 
+
+```{r}
+#| echo: false
+#| fig-cap: ""
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet1.png")
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet2.png")
+```
+ 
+
+#### R for Data Science
+
+See Chapter 5 of [R for Data Science, by Wickham, H., & Grolemund, G.](https://cran.r-project.org/doc/manuals/r-release/R-intro.pdf)
+
+
+## Data Visualization using ggplot
+
+```{r}
+library(tidyverse) 
+library(gapminder) # for additional data
+library(patchwork) # optional, used to show graphs side by side
+```
+
+### Introduction to ggplot2
+
+`ggplot2` is a plotting package that provides power commands to create graphs from data in a data frame. It provides a more programmatic interface for specifying what variables to plot, how they are displayed, and general visual properties. Therefore, we only need minimal changes if the underlying data change or if we decide to change from a bar plot to a scatterplot. This helps in creating publication quality plots with minimal amounts of adjustments and tweaking. [Reference](https://datacarpentry.github.io/R-ecology-lesson/visualizing-ggplot.html). 
+
+- The "gg" here refers to "grammar of graphics".
+- Every graph consists of one or more geometric layers.
+
+For demonstration, we will be using the built-in data set, `mpg`.
+
+```{r}
+data(mpg)     
+head(mpg)     
+```
+
+### Layered Grammar of Graphics
+
+For our illustration of functions in *ggplot2* in Lab 2, the layered grammar of graphics follows the template below. We will go through them each by each in the following sections.
+```{r}
+#| error: TRUE 
+#| eval: FALSE
+ ggplot(data = <DATA>) + 
+     <GEOM_FUNCTION>(
+         mapping = aes(<MAPPINGS>)) +
+     <FACET_FUNCTION> +
+     <SCALE_FUNCTION> +
+     <LABS_FUNCTION> +
+     <THEME_FUNCTION>
+```
+
+### Layers in ggplot2
+
+#### Geometric Layers
+
+##### Commonly Used `geom` Functions
+
+1. `geom_point()`: to create scatterplots
+
+2. `geom_line()`: to create line plots
+
+3. `geom_bar()`: to create bar charts of counts
+
+4. `geom_col()`: to create bar charts of values
+
+5. `geom_boxplot()`: to shows distributions and outliers with boxplots
+
+6. `geom_smooth()`: to adds a fitted trend line
+
+7. `geom_jitter()`: to aid the visualization of points by adding "jitters" to the locations of points
+
+```{r}
+# create a scatter plot  
+ggplot(data = mpg) +
+    geom_point(mapping = aes(x = displ, y = hwy)) 
+
+# add another layer
+ggplot(data = mpg) +
+    geom_point(mapping = aes(x = displ, y = hwy), color = "red") +      # you can also request a specific color
+    geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+The `geom_xxx()` functions can inherit both the data and aesthetic mapping from the top level of the plot, due to the argument `inherit.aes = TRUE` by default (specified the R Documentation). As a result, you can simplify your code as
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+    geom_point(color = "red") +
+    geom_smooth()
+```
+
+##### Aesthetic Mapping
+
+Recall our previous code, 
+```{r}
+#| echo: FALSE
+#| fig-cap: ""
+#| out.width: "70%"
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/ggplot_aes.png") 
+``` 
+
+
+Aesthetics in `geom_xxx()` statement can be specified in two ways:
+
+(1) **inside** the `aes()` function, which maps **variables** to aesthetics, in order to represent or enhance the visual features.
+
+(1) **outside** the `aes()` function, which takes **fixed values**. This step is usually optional.
+
+`geom_xxx(aes(ARGUMENTS = variable, ...), ARGUMENTS = fixed values)`. Some commonly used aesthetics are:
+
+- x, y: define the variables to be put on the x-axis and y-axis. These have to be defined inside the `aes()` function.
+
+- color: defines the colors used to draw lines and strokes.
+
+- fill: defines the colors used inside areas of geoms.
+
+- shape: defines the symbols of points.
+
+- size: defines the size of points.
+
+- alpha: defines the opacity of geoms.
+
+The examples below show the difference between mapping variables and mapping fixed values to aesthetics. 
+ 
+```{r}
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+p1 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy, fill = drv)) # map variable to color 
+  
+p2 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy), color = "red") # color now is mapped by a fixed value 
+
+p1 + p2 # enabled by "patchwork"              
+```
+
+
+```{r}
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+p3 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy, shape = drv))  # map variable to shape 
+  
+p4 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy), shape = 2)  # shape now is mapped by a fixed value 
+
+p3 + p4               
+```
+
+```{r}
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+p5 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy, size = drv))  # map variable to size 
+  
+p6 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy), size = 3)  # size now is mapped by a fixed value 
+
+p5 + p6               
+```
+
+```{r}
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+p7 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy, alpha = drv))  # map variable to alpha 
+  
+p8 <- ggplot(data = mpg) +
+        geom_point(mapping = aes(x = displ, y = hwy), alpha = 0.1)  # alpha now is mapped by a fixed value 
+
+p7 + p8               
+```
+
+```{r}
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+p9 <- ggplot(data = mpg) +
+        geom_bar(mapping = aes(x = class, fill = drv))  # map variable class to fill
+  
+p10 <- ggplot(data = mpg) +
+       geom_bar(mapping = aes(x = class), fill = "red")  # fill now is mapped by a fixed value 
+
+p9 + p10               
+```
+##### Commonly Used Fixed Values
+
+#### Facets 
+
+#### Scales
+
+#### Legends
+
+#### Themes
+
+### Example
+
+### Useful resources
+ 
