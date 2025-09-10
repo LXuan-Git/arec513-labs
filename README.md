@@ -6,4 +6,4 @@ The lab files are authored by **[Feng Qiu](https://apps.ualberta.ca/directory/pe
 The folder is created and maintained by Liyuan Xuan. 
 
 ## Contact
-For questions or suggestions, please contact [Liyuan]<mailto:lxuan@ualberta.ca>.
+For questions or suggestions, please contact [Liyuan](mailto:lxuan@ualberta.ca).
