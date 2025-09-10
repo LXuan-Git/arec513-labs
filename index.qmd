@@ -35,8 +35,7 @@ The software will be used for the lab sessions are **R** and **RStudio**. For in
 
 ### Acknowledgement
 
-The code used in this website is adapted from the Dr. Qiu's previous handouts for AREC 513.
-
+Part of the code used in this website is adapted from Dr. Qiu’s previous handouts for AREC 513.
 
 ### Contact
 
