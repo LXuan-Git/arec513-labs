@@ -23,6 +23,7 @@ range_hwy <- range(mpg$hwy)
 min_hwy <- min(mpg$hwy)
 max_hwy <- max(mpg$hwy)
 sum_stats <- c(mean_hwy, range_hwy, min_hwy, max_hwy) 
+sum_stats
 ```
 
 2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km. 
@@ -38,8 +39,7 @@ mpg$hwy_Lp100km_2 <- 235.215 / mpg$hwy
 unique(mpg$hwy_Lp100km_1 == mpg$hwy_Lp100km_2) # sanity check
 ```
 
-3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient?
-(Tip: to remove duplicates, use the function `unique`). 
+3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient? 
 
 ```{r} 
 
@@ -51,7 +51,7 @@ unique(mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]) # using unique fu
 ```
 
 4. Compute the quantiles of "hwy". Can you also calculate the tertiles instead? (Tip: look up for the RDocumentation for the function `quantile`).
-```{r} 
+```{r}
 
 quantile(mpg$hwy)
 
