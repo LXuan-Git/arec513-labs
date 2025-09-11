@@ -144,17 +144,6 @@ mutate(farm,
 )
 ```
 
-:::callout-caution
-## Exercise
-Generate a new variable called **size3** that meets the following criterion: 
-
-- size3 = “small” if size <= 200
-- size3 = “median” if 200 < size <= 600
-- size3 = “big” if size > 600
-
-Finally, convert **size3** to a factor variable.
-:::
-
 #### `summarize()`  
 
 `summarize()` provides summary statistics, which always produce one single row if there are no grouping variables.
@@ -223,17 +212,7 @@ farm %>% group_by(sex) %>% summarize(num.farmer = n(),
                                      avg.per.acre.return = mean(return/size),
                                      avg.size = mean(size))
 ```
-
-:::callout-caution
-## Exercise
-Generate the following summary statistics, for each type of the farms:
-
-1. the sum of all returns, called **tot.return**
-2. the average returns, called **avg.return**
-
-Finally, rearrange the data based on the value of avg.return, in the descending order.
-:::
-
+ 
 #### Other Functions/Verbs
 
 ##### `slice()` and Its Variants
@@ -265,6 +244,7 @@ count(farm, type)     # count observations per type of farm
 count(farm, type, order = TRUE)     # add argument for order
 count(farm, type, wt = return, sort = TRUE)     # add argument for weight
 ```
+
 ### Export and Import Data
 
 This section introduces functions in base R allowing you to export your data for later usage or import your saved data. To learn more about import/export data, check out this [link](https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/read.table). 
@@ -313,13 +293,31 @@ A handy trick to import data interactively, without the need of specifying a pat
 knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet1.png")
 knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet2.png")
 ```
- 
 
 #### R for Data Science
 
 See Chapter 5 of [R for Data Science, by Wickham, H., & Grolemund, G.](https://cran.r-project.org/doc/manuals/r-release/R-intro.pdf)
 
+### Exercise
+ 
+Continue from the dataset "farm" used in this section, work through the exercises below.
 
+1. Generate a new variable called **size3** that meets the following criterion: 
+
+- size3 = “small” if size <= 200
+- size3 = “median” if 200 < size <= 600
+- size3 = “big” if size > 600
+
+Finally, convert **size3** to a factor variable. 
+
+ 
+2. Generate the following summary statistics, for each type of the farms:
+
+1. the sum of all returns, called **tot.return**
+2. the average returns, called **avg.return**
+
+Finally, rearrange the data based on the value of avg.return, in the descending order.
+ 
 ## Data Visualization using ggplot
 
 ```{r}
@@ -330,12 +328,12 @@ library(patchwork) # optional, used to show graphs side by side
 
 ### Introduction to ggplot2
 
-`ggplot2` is a plotting package that provides power commands to create graphs from data in a data frame. It provides a more programmatic interface for specifying what variables to plot, how they are displayed, and general visual properties. Therefore, we only need minimal changes if the underlying data change or if we decide to change from a bar plot to a scatterplot. This helps in creating publication quality plots with minimal amounts of adjustments and tweaking. [Reference](https://datacarpentry.github.io/R-ecology-lesson/visualizing-ggplot.html). 
+`ggplot2` is a plotting package that provides powerful commands to create graphs from data in a data frame. It offers a more programmatic interface for specifying which variables to plot, how they are displayed, and general visual properties. Therefore, we only need minimal changes if the underlying data change or if we decide to switch from a bar plot to a scatterplot. This helps in creating publication-quality plots with minimal adjustments and tweaking. [Reference](https://datacarpentry.github.io/R-ecology-lesson/visualizing-ggplot.html). 
 
 - The "gg" here refers to "grammar of graphics".
 - Every graph consists of one or more geometric layers.
 
-For demonstration, we will be using the built-in data set, `mpg`.
+For demonstration, we will use the built-in data set, `mpg`, first.
 
 ```{r}
 data(mpg)     
@@ -343,14 +341,13 @@ head(mpg)
 ```
 
 ### Layered Grammar of Graphics
-
-For our illustration of functions in *ggplot2* in Lab 2, the layered grammar of graphics follows the template below. We will go through them each by each in the following sections.
+ 
+For our illustration of functions in *ggplot2* in Lab 2, the layered grammar of graphics follows the template below. We will go through them step by step in the following sections.
 ```{r}
 #| error: TRUE 
 #| eval: FALSE
  ggplot(data = <DATA>) + 
-     <GEOM_FUNCTION>(
-         mapping = aes(<MAPPINGS>)) +
+     <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>)) +
      <FACET_FUNCTION> +
      <SCALE_FUNCTION> +
      <LABS_FUNCTION> +
@@ -363,19 +360,21 @@ For our illustration of functions in *ggplot2* in Lab 2, the layered grammar of 
 
 ##### Commonly Used `geom` Functions
 
-1. `geom_point()`: to create scatterplots
+Below is a list of commonly used `geom` functions, we will explore all of them in the rest of this section:
 
-2. `geom_line()`: to create line plots
+1. `geom_point()`: creates scatterplots
 
-3. `geom_bar()`: to create bar charts of counts
+2. `geom_line()`: creates line plots
 
-4. `geom_col()`: to create bar charts of values
+3. `geom_bar()`: creates bar charts of counts
 
-5. `geom_boxplot()`: to shows distributions and outliers with boxplots
+4. `geom_col()`: creates bar charts of values
 
-6. `geom_smooth()`: to adds a fitted trend line
+5. `geom_boxplot()`: shows distributions and outliers with boxplots
 
-7. `geom_jitter()`: to aid the visualization of points by adding "jitters" to the locations of points
+6. `geom_smooth()`: adds a fitted trend line
+
+7. `geom_jitter()`: aids the visualization of points by adding "jitter" to their positions
 
 ```{r}
 # create a scatter plot  
@@ -387,7 +386,9 @@ ggplot(data = mpg) +
     geom_point(mapping = aes(x = displ, y = hwy), color = "red") +      # you can also request a specific color
     geom_smooth(mapping = aes(x = displ, y = hwy))
 ```
-The `geom_xxx()` functions can inherit both the data and aesthetic mapping from the top level of the plot, due to the argument `inherit.aes = TRUE` by default (specified the R Documentation). As a result, you can simplify your code as
+
+The `geom_xxx()` functions can inherit both the data and aesthetic mappings from the top level of the plot, due to the argument `inherit.aes = TRUE` by default (as specified in the R Documentation). As a result, you can simplify your code as follows:
+
 ```{r}
 ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
     geom_point(color = "red") +
@@ -397,6 +398,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 ##### Aesthetic Mapping
 
 Recall our previous code, 
+
 ```{r}
 #| echo: FALSE
 #| fig-cap: ""
@@ -407,32 +409,32 @@ knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/la
 
 Aesthetics in `geom_xxx()` statement can be specified in two ways:
 
-(1) **inside** the `aes()` function, which maps **variables** to aesthetics, in order to represent or enhance the visual features.
+(1) **inside** the `aes()` function, which maps **variables** to aesthetics to represent or enhance visual features.
 
 (1) **outside** the `aes()` function, which takes **fixed values**. This step is usually optional.
 
 `geom_xxx(aes(ARGUMENTS = variable, ...), ARGUMENTS = fixed values)`. Some commonly used aesthetics are:
 
-- x, y: define the variables to be put on the x-axis and y-axis. These have to be defined inside the `aes()` function.
+- `x`, `y`: define the variables for the x- and y-axes (must be inside `aes()`).
 
-- color: defines the colors used to draw lines and strokes.
+- `color`: defines the color of lines and strokes.
 
-- fill: defines the colors used inside areas of geoms.
+- `fill`: defines the color inside areas of geoms.
 
-- shape: defines the symbols of points.
+- `shape`: defines the symbols of points.
 
-- size: defines the size of points.
+- `size`: defines the size of points.
 
-- alpha: defines the opacity of geoms.
+- `alpha`: defines the opacity of geoms.
 
-The examples below show the difference between mapping variables and mapping fixed values to aesthetics. 
- 
+The examples below show the difference between mapping variables and mapping fixed values to aesthetics.
+
 ```{r}
 #| warning: false
 #| fig-width: 12
 #| fig-height: 6
 p1 <- ggplot(data = mpg) +
-        geom_point(mapping = aes(x = displ, y = hwy, fill = drv)) # map variable to color 
+        geom_point(mapping = aes(x = displ, y = hwy, color = drv)) # map variable to color 
   
 p2 <- ggplot(data = mpg) +
         geom_point(mapping = aes(x = displ, y = hwy), color = "red") # color now is mapped by a fixed value 
@@ -492,17 +494,376 @@ p10 <- ggplot(data = mpg) +
 
 p9 + p10               
 ```
+
 ##### Commonly Used Fixed Values
 
+As shown above, **fixed values** mapped to aesthetics are usually numbers or strings. Below are some commonly used fixed values for `geom` functions:
+
+- `color` and `fill`: see [R color cheatsheet](https://www.nceas.ucsb.edu/sites/default/files/2020-04/colorPaletteCheatsheet.pdf).
+ 
+- `linetype` and `shape`: see [Cookbook for R](http://www.cookbook-r.com/Graphs/Shapes_and_line_types/) 
+
+- `size`: takes numeric values; larger values correspond to larger sizes.
+
+- `alpha`: takes values between 0 and 1; larger values correspond to less transparency.
+
+- Some extra examples are shown below
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+
+mpg_class_year_hwy <- mpg %>% group_by(class, year) %>% summarize(mean_hwy = mean(hwy))
+
+p11 <- ggplot(data = mpg_class_year_hwy, aes(year, mean_hwy, color = class)) +
+        geom_line(size = 2, linetype = "dotdash")   
+  
+p12 <- ggplot(data = mpg_class_year_hwy, aes(year, mean_hwy, color = class)) +
+        geom_line(size = 2, linetype = 4) +
+        geom_point(size = 4, shape = 15)
+
+p11 + p12               
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+
+mpg_class_hwy <- mpg %>% group_by(class) %>% summarize(mean_hwy = mean(hwy))
+
+p13 <- ggplot(data = mpg_class_hwy, mapping = aes(x = class, y = mean_hwy)) +
+        geom_col(fill = "lightblue1")  
+  
+p14 <- ggplot(data = mpg_class_hwy, mapping = aes(x = class, y = mean_hwy)) +
+        geom_col(fill = "lightblue3")   
+
+p13 + p14               
+```
+ 
+```{r}
+#| warning: false
+#| fig-width: 12
+#| fig-height: 6
+ 
+p15 <- ggplot(data = mpg, aes(x = drv, y = hwy, color = drv)) +
+        geom_boxplot() 
+  
+p16 <- ggplot(data = mpg, aes(x = drv, y = hwy, color = drv)) +
+        geom_boxplot() + 
+        geom_jitter(width = 0.333) 
+
+p15 + p16               
+```
+  
 #### Facets 
 
+`facet_wrap()`: partitions a plot into a matrix of panels, typically based on the values of **one faceting variable**. Each panel shows a different subset of the data.
+
+`facet_grid()`: partitions a plot into a matrix of panels, based on the combination of **two faceting variables**.
+
+Following the previous practice, let us create a line plot to show the trend of average fuel efficiency for each manufacturer.  
+ 
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+
+mpg_mfr_year_hwy <- mpg %>% group_by(manufacturer, year) %>% summarize(mean_hwy = mean(hwy))
+ 
+p17 <- ggplot(data = mpg_mfr_year_hwy, aes(year, mean_hwy, color = manufacturer)) +
+        geom_line(size = 2)
+  
+p18 <- ggplot(data = mpg_mfr_year_hwy, aes(year, mean_hwy, color = manufacturer)) +
+        geom_line(size = 2) + 
+        facet_wrap(~ manufacturer) 
+
+p17 + p18               
+```
+
+As you can see in "p17", the graph is not effective in showing the trend in fuel efficiency across time for some of the manufacturers. "p18" partitions the plot into subplots for each individual manufacturer. Since all panels share the same scale for "mean_hwy", the graph is still not effective. To improve, you can add `scales = "free"` to allow different scales for subplots. 
+ 
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+ 
+p19 <- ggplot(data = mpg_mfr_year_hwy, aes(year, mean_hwy, color = manufacturer)) +
+        geom_line(size = 2) + 
+        facet_wrap(~ manufacturer, scales = "free")  
+
+p18 + p19               
+```
+
+Now, let's see how `facet_wrap()` differs from `facet_grid()`, starting with graph(s) showing "hwy" vs. "displ".
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+
+p20 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+        geom_point() +
+        geom_smooth()
+
+p21 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+        geom_point() +
+        geom_smooth() +
+        facet_wrap(~drv)
+
+p20 + p21
+```
+
+As shown below, `facet_wrap()` shows the relationship for each value of **"drv"**, while `facet_grid()` shows the relationship for each combinations of the values of **"drv"** and **fl**.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+
+p22 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+        geom_point() +
+        geom_smooth() +
+        facet_wrap(~drv, nrow = 3, strip.position = "right") # adding nrow and strip.position for better visualization
+
+p23 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+        geom_point() +
+        geom_smooth() +
+        facet_grid(drv ~ fl)
+
+p22 + p23
+```
+  
 #### Scales
 
-#### Legends
+##### Scales of Axes
 
-#### Themes
+This section explores some common functions that scale the axes of your graph. 
 
-### Example
+- When mapping **discrete variables**: the default functions are `scale_x_discrete()` for the x-axis, and `scale_y_discrete()` for the y-axis.
+
+- When mapping **continuous variables**: the default functions are `scale_x_continuous()` for the x-axis, and `scale_y_continuous()` for the y-axis.
+
+  - Built-in functions like `scale_x_log10()`, `scale_x_sqrt()`, and `scale_x_reverse()` provide easy access to common transformations: base-10 logarithm, square root, and reversed order.
+
+For this section, let's use a new dataset from the package *gapminder*. See how arguments `limits` controls the min/max of the axes, and `breaks` displays ticks only at specified values.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+ 
+glimpse(gapminder)
+
+base_plot <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+              geom_point() 
+
+scale_x_y <- base_plot + 
+              scale_x_continuous(limits = c(0, 50000), breaks = c(10000, 25000, 50000)) +
+              scale_y_continuous(limits = c(20, 70), breaks = c(30, 50, 70))
+
+base_plot + scale_x_y
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+ 
+built_in_log10 <- base_plot + scale_x_log10()
+
+manual_log10 <- ggplot(gapminder, aes(x = log10(gdpPercap), y = lifeExp, color = continent)) +
+                  geom_point() 
+
+built_in_log10 + manual_log10
+```
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+ 
+base_plot_reverse <- base_plot + scale_x_reverse() + scale_y_reverse()
+ 
+base_plot + base_plot_reverse
+```
+
+##### Scales of Colors
+
+Recall you can set the color of your graphs using the aesthetics `color` and/or `fill`. 
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+
+# building a simple dataframe
+mydata <- data.frame(x = c("a", "b", "c", "d"), y = c(1, 2, 3, 4))
+mydata
+
+bar_color <- ggplot(mydata, aes(x = x, y = y, color = x)) + geom_col()
+bar_fill  <- ggplot(mydata, aes(x = x, y = y, fill = x))  + geom_col()
+
+bar_color + bar_fill
+
+bar_color_scale <- bar_color + scale_color_discrete()  # since x is discrete now
+bar_fill_scale  <- bar_fill  + scale_fill_discrete()  
+
+bar_color_scale + bar_fill_scale # no changes since we are using defaults 
+
+```
+To assign different colors to different values of "x", we can utilize the function `scale_fill_brewer()`, which uses the color palettes from the package *RColorBrewer* without the need of installing and loading the package. To see all the colors, check [this link](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html) or type `RColorBrewer::display.brewer.all()`.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+
+ 
+bar_fill_brewer_1 <- bar_fill + scale_fill_brewer(palette = "OrRd")
+
+bar_fill_brewer_2 <- bar_fill + scale_fill_brewer(palette = "BrBg")
+
+bar_fill_brewer_1 + bar_fill_brewer_2
+
+```
+
+#### Labs and Themes
+
+To modify elements of a plot other than the data, such as axes, legend, or title, use `labs()` and `theme()`. See how the example below applies changes to the graph "bar_fill" on axis, legend and plot title.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 18
+#| fig-height: 8
+ 
+bar_fill_mod <- bar_fill + labs(x = "Letters", y = "Numbers", fill = "Legend", title = "bar_fill Modified") +
+                                theme(
+                                  axis.title = element_text(size = 24, face = "bold"),
+                                  axis.text = element_text(size = 20),
+                                  axis.text.x = element_text(angle = 45),
+                                  
+                                  legend.title = element_text(size = 24, face = "bold"),
+                                  legend.text = element_text(size = 20),
+                                  legend.position = "bottom",
+                                  
+                                  title = element_text(size = 30, face = "bold")
+                                )
+        
+
+bar_fill + bar_fill_mod
+
+```
+
+#### Built-in Themes
+
+There are a number of built-in themes come with *ggplot2* that you can use without the need to specify every element of your graphs. The default theme of *ggplot2* is `theme_grey()`. Let's see some examples on our base plot below.
+```{r}
+#| message: false
+#| warning: false  
+ 
+base_theme <- ggplot(data = mpg, aes(x = displ, y = hwy)) +
+                geom_point(color = "red") +
+                geom_smooth() +
+                labs(x = "Engine Displacement", y = "Highway Mileage", title = "Fuel Efficiency") 
+base_theme  
+
+```
+```{r}
+#| message: false
+#| warning: false 
+#| fig-width: 18
+#| fig-height: 8
+ 
+base_theme_default <- base_theme + theme_grey() + labs(title = "theme_grey()")
+        
+base_theme1 <- base_theme + theme_bw() + labs(title = "theme_bw()")
+
+base_theme2 <- base_theme + theme_classic() + labs(title = "theme_classic()")
+
+base_theme3 <- base_theme + theme_minimal() + labs(title = "theme_minimal()")
+        
+base_theme4 <- base_theme + theme_linedraw() + labs(title = "theme_linedraw()")
+
+base_theme5 <- base_theme + theme_light() + labs(title = "theme_light()")
+
+base_theme6 <- base_theme + theme_dark() + labs(title = "theme_dark()")
+
+base_theme7 <- base_theme + theme_void() + labs(title = "theme_void()")
+
+(base_theme_default + base_theme1 + base_theme2 + base_theme3 +
+ base_theme4 + base_theme5 + base_theme6 + base_theme7) + 
+  plot_layout(ncol = 4, nrow = 2)
+
+```
+
+Extra themes and scales can be acquired by installing package *ggthemes*. To see the complete list, visit [this webiste](https://jrnold.github.io/ggthemes/?utm_source=chatgpt.com).
+
+### Annotating and Saving Plots
+
+Sometimes, you may wish to add text in your graphs to highlight certain elements. Take "base_plot" in Section [2.3.3](#scales) for example, say you wish to highlight countries with high GDP per capita (above $50,000) but low life expectancy (below 70 years old).
+
+```{r}
+#| message: false
+#| warning: false 
+#| fig-width: 18
+#| fig-height: 8
+
+h_country <- gapminder %>% filter(gdpPercap > 50000 & lifeExp < 70) # create the data that's to be highlighted in the graph
+
+base_plot_text <- base_plot + 
+                    geom_text(data = h_country, aes(label = country), size = 4, vjust = 1.5, show.legend = FALSE) + 
+                    geom_text(data = h_country, aes(label = year), size = 4, vjust = 2.75, show.legend = FALSE) 
+
+base_plot + base_plot_text
+
+```
+
+To save a created plot, you can use the function `ggsave()` as below.
+
+```{r}
+#| eval: FALSE
+
+ggsave("gdp_lifeExp.png", plot = base_plot_text, width = 10, height = 7)  # save to your current working directory
+
+# you can save ggplot as one of "eps", "ps", "tex", "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" 
+# you can also use different units = c("in", "cm", "mm", "px"),  
+# ggsave("myplot.pdf", width = 20, height = 20, units = "cm")
+
+```
 
 ### Useful resources
+
+#### ggplot2 Cheat Sheet
  
+[Click here for more information](https://rstudio.github.io/cheatsheets/data-visualization.pdf) 
+
+```{r}
+#| echo: false
+#| fig-cap: ""
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet3.png")
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet4.png")
+```
+
+#### R for Data Science
+
+See Chapter 3 and 28 of [R for Data Science, by Wickham, H., & Grolemund, G.](https://cran.r-project.org/doc/manuals/r-release/R-intro.pdf)
+
+#### ggplot2: Elegant Graphics for Data Analysis
+
+See the third edition of [ggplot2: Elegant Graphics for Data Analysis, by Hadley Wickham, Danielle Navarro, and Thomas Lin Pedersen](https://ggplot2-book.org/).
+
+### Exercise

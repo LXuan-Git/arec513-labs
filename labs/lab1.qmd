@@ -157,7 +157,13 @@ grades_1 * 2
 sqrt(grades_1)
 
 grades_1 >= 78
+
+grades_1 == 78
 ```
+
+:::callout-warning
+When testing for equality, double `==` has to be used. 
+:::
 
 ##### Factor Vectors
 
@@ -380,10 +386,9 @@ Load the dataset "mpg" and work through the exercises below. Note, "mpg" is incl
 
 2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km. 
 
-3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient?
-(Tip: to remove duplicates, use the function `unique`). 
+3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient? 
 
 4. Compute the quantiles of "hwy". Can you also calculate the tertiles instead? (Tip: look up for the RDocumentation for the function `quantile`). 
 
-5. Now, based on the tertiles you calculated, assign "least efficient", "medium", and "most efficient" labels to all models. Try using both base R indexing functions and the function `ifelse`. 
+5. Now, based on the tertiles you calculated, assign "least efficient", "medium", and "most efficient" labels to all models. Try using both base R indexing and the function `ifelse`. 
 
