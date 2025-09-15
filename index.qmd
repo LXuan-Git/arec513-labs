@@ -11,7 +11,7 @@ Welcome! This website is for the R labs for **AREC513 - Econometric Applications
 
 ### Schedule
 
-The lab sessions will take place in **GSB 7-11** from **2:00 – 3:50 PM** on the following dates:
+The lab sessions will take place in **GSB 2-17** from **2:00 – 3:50 PM** on the following dates:
 
 - Lab 1 (by Liyuan Xuan) — Sept 15  
 
