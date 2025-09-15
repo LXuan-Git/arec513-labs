@@ -1,0 +1,288 @@
+---
+title: "Exercise - Answer Key"  
+format:
+  html:
+    toc: true
+    toc-title: "Exercise"  
+    number-sections: false 
+---
+  
+## Lab 1 
+
+Load the dataset "mpg" and work through the exercises below. Note, "mpg" is included in the tidyverse package, so you will need to load the package first.
+
+1. Calculate the **mean**, **range**, **minimum**, and **maximum** of the variable "hwy" across all models. Then, combine these statistics into one vector. (Tip: look up the RDocumentation for the functions `mean`, `range`, `min`, and `max`).
+
+```{r} 
+
+library(tidyverse)
+data(mpg)
+
+mean_hwy <- mean(mpg$hwy)
+range_hwy <- range(mpg$hwy)
+min_hwy <- min(mpg$hwy)
+max_hwy <- max(mpg$hwy)
+sum_stats <- c(mean_hwy, range_hwy, min_hwy, max_hwy) 
+sum_stats
+```
+
+2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km. 
+
+```{r} 
+
+temp <- 235.215 / mpg$hwy
+mpg$hwy_Lp100km_1 <- temp
+
+# Or, in one step
+mpg$hwy_Lp100km_2 <- 235.215 / mpg$hwy
+
+unique(mpg$hwy_Lp100km_1 == mpg$hwy_Lp100km_2) # sanity check
+```
+
+3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient? 
+
+```{r} 
+
+mpg$model[mpg$hwy == max(mpg$hwy)]
+
+mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]
+
+unique(mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]) # using unique function to remove duplicates
+```
+
+4. Compute the quantiles of "hwy". Can you also calculate the tertiles instead? (Tip: look up for the RDocumentation for the function `quantile`).
+
+```{r}
+
+quantile(mpg$hwy)
+
+quantile(mpg$hwy, probs = seq(0, 1, 0.333)) 
+quantile(mpg$hwy, c(0, 0.333, 0.666, 1)) # you can achieve the same using this
+```
+
+5. Now, based on the tertiles you calculated, assign "least efficient", "medium", and "most efficient" labels to all models. Try using both base R indexing and the function `ifelse`.
+
+```{r}
+
+tertile <- quantile(mpg$hwy, c(0, 0.333, 0.666, 1))
+
+mpg$efficient_class_1 <- NA # optional, this eliminates the warning message of "Unknown or uninitialised column"
+mpg$efficient_class_1[mpg$hwy < tertile[2]] <- "least efficient"
+mpg$efficient_class_1[mpg$hwy >= tertile[2] & mpg$hwy < tertile[3]] <- "medium"
+mpg$efficient_class_1[mpg$hwy >= tertile[3]] <- "most efficient"
+
+# OR
+mpg$efficient_class_2 <- NA # given how ifelse functions are specified below, this step becomes necessary
+mpg$efficient_class_2 <- ifelse(mpg$hwy < tertile[2], "least efficient", mpg$efficient_class_2)
+mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[2] & mpg$hwy < tertile[3], "medium", mpg$efficient_class_2)
+mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[3], "most efficient", mpg$efficient_class_2)
+
+unique(mpg$efficient_class_1 == mpg$efficient_class_2) # sanity check
+```
+ 
+
+## Lab 2 
+
+### Data Manipulation using dplyr
+
+#### Part A {-}
+ 
+Continue from the farm business dataset "farm" used in Lab 2, work through the exercises below.
+
+  1. Create a new variable called **size3** that meets the following criteria: 
+  
+      i) size3 = “small” if size <= 200
+    
+      ii) size3 = “medium” if 200 < size <= 600
+    
+      iii) size3 = “big” if size > 600
+    
+      Finally, convert size3 to a factor variable that is ordinal from "small" to "big".  
+  
+```{r}
+#| warning: false
+#| message: false
+
+name <- c("Henry", "Larry", "Alex", "Gaby", "Amy", "Ruby")
+sex <- c("male", "male", "male", "female", "female", "female")
+age <- c(43, 60, 25, 50, 28, 58) 
+type <- c("crop", "livestock", "urban", "dairy", "crop", "livestock") 
+size <- c(550, 800, 10, 600, 1000, 700) 
+return <- c(40, 90, 50, 90, 90, 95)
+
+farm <- data.frame(name, age, sex, type, size, return)
+ 
+farm <- farm %>% mutate(size3 = ifelse(size <= 200, "small", NA)) %>%
+                 mutate(size3 = ifelse(size > 200 & size <= 600, "medium", size3)) %>%
+                 mutate(size3 = ifelse(size > 600, "big", size3)) %>%
+                 mutate(size3 = factor(size3, levels = c("small", "medium", "big")))
+
+farm
+farm$size3  
+
+```
+ 
+  2. Generate the following summary statistics, for each type of the farms:
+  
+      i) the sum of all returns, called **tot.return**
+    
+      ii) the average returns, called **avg.return**
+    
+      Finally, rearrange the data based on the value of avg.return, in the descending order.
+  
+```{r}
+#| warning: false
+#| message: false
+
+farm.sum <- farm %>% group_by(type) %>%
+                     summarize(tot.return = sum(return), 
+                               avg.return = mean(return))
+
+farm.sum <- arrange(farm.sum, desc(avg.return))
+farm.sum
+
+```
+
+#### Part B {-}
+  
+Import data "mpg" and work through the coding below.
+   
+  1. Drop the variables **displ**, **drv** and **fl**, then exclude cars that were manufactured by **Hyundai** and **Pontiac** .
+
+```{r}
+#| warning: false
+#| message: false
+
+data(mpg)     # you may need to library(tidyverse) first
+
+mpg <- mpg %>% select(-displ, -drv, -fl) %>% 
+               filter(manufacturer != "hyundai" & manufacturer != "pontiac")
+
+head(mpg)      
+
+unique(mpg$manufacturer)
+
+```
+
+  2. Continue from your dataframe above and generate the summary statistics, for each manufacturer, model, and year:
+  
+      i) the average of "cty", called **avg.cty**
+    
+      ii) the average of "hwy", called **avg.hwy**
+    
+      iii) the total number of cars produced, called **tot.cars**
+  
+```{r}
+#| warning: false
+#| message: false
+
+mpg.sum <- mpg %>% group_by(manufacturer, model, year) %>%
+                   summarize(avg.cty = mean(cty),
+                             avg.hwy = mean(hwy),
+                             tot.cars = n())
+
+head(mpg.sum)
+
+``` 
+
+### Data Visualization using ggplot
+
+#### Part A {-}
+
+Import data "mpg" and work through the exercises below.
+
+  1. Create a scatterplot that shows all of the following:
+  
+      i) use "cty" on the x-axis and "hwy" on the y-axis
+        
+      ii) assign different colors for "class" and different shapes for "year".  
+        (tip: since continuous variables cannot be mapped to `shape`, you will need to convert "year" to a factor using `factor()`)
+       
+      iii) fit **only one trend line** for all points 
+  
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+
+data(mpg)     # library(tidyverse)
+
+ggplot(mpg) +
+  geom_point(aes(x= cty, y = hwy, color = class, shape = factor(year))) +
+  geom_smooth(aes(x= cty, y = hwy))
+
+```
+
+  2. Create a scatterplot that shows all of the following:
+  
+      i) use "displ" on the x-axis and "hwy" on the y-axis
+        
+      ii) partition the graph into a grid by the combination of "drv" and "fl", but only include "fl" that equals "p" or "r"
+        
+      iii) fit a trend line in each graph within the grid
+    
+      (Tip: you can build from the example "p23" in Lab 2.) 
+  
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+ 
+mpg.mod <- mpg %>% filter(fl == "p" | fl == "r")
+
+ggplot(mpg.mod, aes(x = displ, y = hwy)) +
+  geom_point() +
+  geom_smooth() + 
+  facet_grid(drv ~ fl)
+
+```
+
+  3. Create a bar chart that shows the average "hwy" of all cars produced in 2008 by each of the following manufacturers:  
+  **Audi**, **Hyundai**, **Nissan** and **Volkswagen**. Assign a different color to each manufacturer. 
+
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 8
+#| fig-height: 6
+
+mpg.sum <- mpg %>% filter(manufacturer == "audi" | manufacturer == "hyundai" |
+                          manufacturer == "nissan" | manufacturer == "volkswagen") %>%
+                   filter(year == 2008) %>% 
+                   group_by(manufacturer) %>%
+                   summarize(mean_hwy = mean(hwy))
+
+ggplot(mpg.sum, aes(x = manufacturer, y = mean_hwy, fill = manufacturer)) + geom_col()
+
+```
+
+#### Part B {-}
+
+Import the data "gapminder" and try to reproduce the graph below.
+
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 12
+#| fig-height: 6
+ 
+library(gapminder)
+
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point(shape = 17, size = 1.5) + 
+  geom_smooth() + 
+  facet_grid(continent ~ year, scales = "free") +
+  
+  labs(
+    title = "Relation between GDP per capita and Life Expectancy by Continent from 1952 to 2007",
+    x = "GDP per capita", y = "Life Expectancy", color = "Legend"
+  ) +
+  
+  theme(
+    axis.text.x = element_blank(), 
+    title = element_text(face = "bold")
+  )
+ 
+```

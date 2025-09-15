@@ -1,0 +1,42 @@
+---
+title: "R Labs"
+toc: false
+toc-title: ""
+number-sections: false
+page-layout: article  
+
+---
+
+Welcome! This website is for the R labs for **AREC513 - Econometric Applications** (Fall 2025) taught by Dr. Feng Qiu. 
+
+### Schedule
+
+The lab sessions will take place in **GSB 7-11** from **2:00 – 3:50 PM** on the following dates:
+
+- Lab 1 (by Liyuan Xuan) — Sept 15  
+
+- Lab 2 (by Liyuan Xuan) — Sept 22  
+
+- Lab 3 (by Liyuan Xuan) — Sept 29 
+
+- Lab 4 (by Liyuan Xuan) — Oct 20  
+
+- Lab 5 (by Liyuan Xuan) — Oct 27 
+
+- Lab 6 (by Liyuan Xuan) — Nov 10 
+
+- Lab 7 (by Feng Qiu) — Nov 24  
+
+- Lab 8 (by Feng Qiu) — Dec 8 
+
+### Software
+
+The software will be used for the lab sessions are **R** and **RStudio**. For instruction regarding installation, please navigate to [Lab 1](labs/lab1.qmd).
+
+### Acknowledgement
+
+Part of the code used in this website is adapted from Dr. Qiu’s previous handouts for AREC 513.
+
+### Contact
+
+The website is maintained by [Liyuan Xuan](https://apps.ualberta.ca/directory/person/lxuan). For questions or suggestions, feel free to contact Liyuan at <lxuan@ualberta.ca>.

@@ -1,0 +1,37 @@
+/* -- base link styles -- */
+a { text-decoration: none; } /* remove underlines from links by default */
+a:hover { text-decoration: underline; } /* show underline on hover for clarity */
+ 
+/* -- headings -- */
+h1, h2, h3, h4, h5, h6 { font-weight: 700 !important; } /* force bold headings across levels */
+
+/* -- code blocks -- */
+pre code { font-size: 0.8rem; } /* slightly smaller font for code inside <pre> */
+
+/* -- callouts -- */
+.callout { border-radius: 12px; } /* round callout corners */
+.callout-note { border-left: 6px solid #5b8def; } /* blue accent bar for 'note' */
+.callout-tip { border-left: 6px solid #28a745; } /* green accent bar for 'tip' */
+.callout-warning { border-left: 6px solid #ffc107; } /* amber accent bar for 'warning' */
+ 
+/* -- images -- */
+img { max-width: 100%; height: auto; } /* make images responsive and keep aspect ratio */
+ 
+/* -- tables -- */
+.table { font-size: 0.95rem; } /* slightly reduce table text size */
+  
+/* -- layout tweaks for wider screens -- */
+@media (min-width: 992px) { /* apply only on large viewports */
+
+  .sidebar { 
+    width: 280px !important; /* set fixed sidebar width */
+    flex: 0 0 280px !important; /* prevent flex growth/shrink */
+  } /* sidebar width control */
+
+  .page-columns .content {
+    margin-left: 0 !important; /* remove leftover left margin/gutters */
+    margin-right: 0 !important; /* remove leftover right margin/gutters */
+    padding-left: 20px; /* add a small gap between sidebar/TOC and content */
+  } /* content area next to sidebar */
+
+}

@@ -1,0 +1,394 @@
+---
+title: "Lab 1: Introduction to R"
+author: "Feng Qiu, Liyuan Xuan"
+date: "Sept 15, 2025"
+format:
+  html:
+    toc: true
+    toc-title: "Section"  
+---
+
+```{r}
+#| results: hide    # Hides the output of the code block
+#| echo: false      # Hide the R code
+#| message: false   # Hide messages from packages
+#| warning: false   # Hide warnings
+library(tidyverse)   
+data(mpg)
+```
+
+## Download and Install
+- **R**  
+  R is a free software environment for statistical computing and graphics. To download, go to [CRAN](https://cran.r-project.org/) and select the installer for your operating system (Windows, Mac, or Linux).
+ 
+
+- **RStudio**  
+  RStudio is a user-friendly application that helps you write in R and enhances your programming experience. To download, visit [this website](https://posit.co/download/rstudio-desktop/) and select the installer for your operating system.
+    
+After R and RStudio are installed, we will only need to use RStudio for this and future labs. The default RStudio layout has three panes: **Console**, **Environment**, and **Output**.
+  
+```{r}
+#| echo: false
+#| fig-cap: "screenshot of RStudio"
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab1/panes_three.png")
+```
+
+You can customize your RStudio working environment via <kbd>Tools > Global Options</kbd> in the top menu bar.
+
+## Working Directory
+
+The working directory is a folder path on your computer that sets the default location for files you read into R or save out of R. Think of it as a little “flag” on your computer tied to your project. 
+
+- **To find your current working directory**, type the code below in your Console pane and press *Enter*.
+  ```{r} 
+  getwd()
+  ```
+
+- **To change your current working directory**, you can
+  1. Use the code below
+  ```{r} 
+  setwd("C:/Program Files")  
+  ```
+  
+  ::: callout-tip
+  In R, file paths are separated by **forward slash `/`**, not backward slash `\`. The full path needs to be wrapped with the double quotations `" "`
+  :::
+
+  2. Use the top menu bar <kbd>Session > Set Working Directory > Choose Directory</kbd>
+  
+  3. To set a default working directory, go to <kbd>Tools > Global Options > General > Default working directory</kbd>
+
+## R Basics
+
+### Calculations
+
+```{r} 
+1 + 1
+  
+5 * 6
+  
+2 ^ 4
+  
+(8 + 5 * 6 / 3) / 2
+```
+ 
+### Creating Objects
+ 
+```{r} 
+a <- 5 * 6
+a
+  
+b <- 8 + a / 3
+b
+  
+c <- "AREC 513"
+c
+```
+   
+::: callout-tip
+In RStudio, you can use the shortcut *Alt + - (hyphen)* to write the assignment operator `<-`.
+:::
+
+### Data Types
+ 
+There are four main data types in R we will use in the labs: numeric, integer, logical, and character.
+
+- **Numeric data**, also known as quantitative data
+
+  ```{r}
+  is.numeric(b)     # test if the object "b" is numeric
+  ```
+
+- **Integer data**, stores whole numbers without decimals
+
+  ```{r}
+  d <- 8L     # to generate integer variable, add "L" after the number
+  is.integer(d)
+  ```
+
+- **Logical data**, stores only <kbd>TRUE</kbd> or <kbd>FALSE</kbd>
+
+  ```{r}
+  e <- TRUE
+  is.logical(e)
+  ```
+
+- **Character data**, stores text strings
+
+  ```{r}
+  is.character(c)
+  ```
+ 
+::: callout-tip
+You can also use `class()` to check the class of an object. For example, try `class(a)`.
+:::
+
+To convert your objects to a specific type, use `as.numeric()`, `as.integer()`, `as.logical()`, or `as.character()`.
+
+### Data Structures
+
+When analyzing data, you rarely deal with objects that store one single value or datasets with one single variable. This section discusses some common data structures.
+
+#### Vectors
+
+##### Create a Vector
+
+Vectors play a crucial role in R, R is a vectorized language. A vector is a collection of values/elements, all of the same type. We can use the function c() to create a vector, which means "combine".
+
+```{r}
+grades_1 <- c(75, 76, 77, 78, 79, 80, 81, 82, 83, 84)
+grades_1
+
+grades_2 <- c(75:84) # to generate continuous values from 75 to 80, you can use ":" directly.
+grades_2
+
+names <- c("Marshall", "Ruby", "Peppa", "George", "Suzy", "Danny", 
+           "Pedro", "Rebecca", "Rubble", "Ryder", "Max", "Chase")
+names
+```
+
+##### Vector Operations
+
+```{r}
+grades_1 + 5 # operations apply to each element in the vector
+
+grades_1 * 2
+
+sqrt(grades_1)
+
+grades_1 >= 78
+
+grades_1 == 78
+```
+
+:::callout-warning
+When testing for equality, double `==` has to be used. 
+:::
+
+##### Factor Vectors
+
+Factor variables are important when building statistical models. There are two types of factor variable, 
+
+- **nominal**: categorical variable with no inherent order among the categories 
+
+```{r}
+jbp <- c("poor", "excellent", "fair", "poor", "good") # create a nominal job performance vector
+jbp
+class(jbp)
+
+jbp.1 <- as.factor(jbp)     # converting your character vector to factor
+jbp.1
+class(jbp.1)
+
+```
+ 
+- **ordinal**: categorical variable with a defined ranking among the categories
+
+```{r}
+# create a job performance vector, that is nominal
+jbp.2 <- factor(jbp, levels = c("poor", "fair", "good", "excellent"))     # assigning an ordinal ranking
+jbp.2
+```
+
+##### Subset Vectors and Select Elements
+
+To subset a vector or select certain elements from a vector, we use the square brackets `[ ]`.
+
+- **By Position**
+
+  ```{r}
+  grades_1[1]         # select the 1st element
+  grades_1[-2]        # exclude the 2nd element
+  grades_1[3:5]       # select elements 3 to 5
+  grades_1[c(1,3,5)]  # select the 1st, 3rd, and 5th elements
+  ```
+
+- **By Condition** 
+
+  ```{r}
+  grades_1[grades_1 >= 78]               # select grades_1 that are equal or above 78
+  grades_1[grades_1 != 78]               # select grades_1 that do not equal to 78
+  jbp.2[jbp.2 %in% c("poor", "fair")]    # select job performance that is "poor" or "fair" 
+  ```
+  ::: callout-tip
+    If you wish to apply multiple conditions, the common operators are `&` (Shift + 7) for AND and `|` (Shift + \\) for OR. Try `grades_1[grades_1 >= 78 & grades_1 != 80]`.
+  :::
+
+#### Matrices
+
+A matrix is a collection of data elements arranged in a two-dimensional rectangular layout. The elements of a matrix must be of the same type of data. Matrices are commonly used in mathematics and statistics. Math matrices and R matrices are different concepts. Matrices in R are broader.
+
+```{r}
+ma.1 <- matrix(1:15, nrow = 5, ncol =3)
+ma.1
+
+ma.2 <- matrix(names, nrow = 6, ncol = 2)
+ma.2
+```
+
+Since matrices are two-dimensional, to subset or select elements from a matrix using `[ ]`, you need to define row and/or column index in `[ROW, COL]`.
+
+```{r}
+ma.1[2, ]   # select all elements in the 2nd row of ma.1
+
+ma.1[, 2]   # select all elements in the 2nd column of ma.1
+
+ma.1[2, 2]  # select the element in row 2 and column 2 of ma.1
+
+ma.2[3, 2]  # select the element in row 3 and column 2 of ma.2
+
+```
+
+#### Arrays
+
+In R, arrays are the data objects that can store data in more than two dimensions. Data need to be the same type.
+
+```{r}
+array.1 <- array(1:24, dim = c(2, 3, 4))      # 2 rows * 3 columns * 4 matrices
+array.1
+
+```
+ 
+#### Lists
+
+Lists are R objects that can contain multiple components of different data types, data structures, and dimensions.
+
+```{r}
+names
+
+grades_1
+
+list.1 <- list(name = names, grade = grades_1, random_num = 9)      # create a list with 3 components
+list.1
+
+names(list.1)
+```
+
+To select from a list, you can keep using index numbers with square brackets `[ ]`, or you can use
+the extractor operator `$`.
+
+```{r}
+list.1[1]     # create a new list with only the 1st component from list.1
+list.1[[1]]   # extract all elements from the 1st component of list.1 (i.e. the name vector)
+
+list.1$name   # extract all the elements from the component named "name" from list.1
+
+list.1[[1]][1]
+list.1$name[1]
+
+```
+
+#### Data Frames
+
+A data frame is a list whose elements are equal-length vectors, and vectors can be different data types. Basically, a data frame is a limited version of a list, or a flexible version of a matrix. In a data frame, vectors/variables can be different types, but the length needs to be the same.
+
+```{r}
+df1 <- data.frame(Name = names[1:10], Grade = grades_1)
+df1
+
+df1$Name
+
+df1$Grade[1:5]
+
+df1$Grade[df1$Grade >= 80]
+
+df1$Name[df1$Grade >= 80]
+
+df1[df1$Grade >= 80, ]
+
+mean(df1$Grade)
+```
+
+
+
+## R Packages
+
+To extend the capabilities of R, various packages are developed to handle different tasks: data manipulation, analysis, and visualization.
+
+
+### Base Packages
+
+The base packages providing basic functions and datasets are pre-included with R installation. For example, the package *datasets*, which provides a collection of datasets. 
+
+- Try `data()`, which returns the list of datasets within this package. 
+
+- To load one of the listed datasets, e.g. <kbd>mtcars</kbd>, type `data(mtcars)`. This dataset provides statistics from road tests on multiple models of cars. 
+   
+### Contributed Packages
+
+Many other contributed packages, designed to implement specific operations, are not included with R by default. To utilize these packages, we need to install and load them individually.
+
+- Install a package, type `install.packages("tidyverse")` 
+
+- Load the installed package, type `library(tidyverse)`
+
+::: callout-warning
+When installing, the package names must be in quotes `" "`. When loading, they are not necessary.
+:::
+
+After loading the package, we can use the functions in *tidyverse*. *tidyverse* is a collection of packages, such as *dplyr* and *tidyr* for data manipulation, *ggplot2* for data visualization, *lubridate* for processing time-series data. 
+
+- Example with `select` from *dplyr*, type `?select` first to see the R Documentation for this function.
+
+  ```{r}
+  data(mpg)     # new dataset mpg also comes with tidyverse
+  
+  head(mpg)     # head() displays the first 6 observations of a dataset
+  
+  head(select(mpg, c(manufacturer, model, year)))      # select() selects named variables from a data frame
+  
+  head(filter(mpg, year >= 2000))     # filter() subsets a data frame based on defined conditions
+  ```
+  See how packages simplify the code and make it more intuitive. More details about *tidyverse* will be discussed in Lab 2.
+
+## R Script
+
+R script is simply a text file containing a set of commands and comments, which allows you to save, edit, and execute your code. To create an R script, in the top toolbar, select <kbd>File > New File > R Script</kbd>.
+
+Opening an  R script creates a new pane to your RStudio, the **Source** pane. In this pane, you can edit and save your code. To run your code, you can hold *Ctrl* and press *Enter*, or click the <kbd>Run</kbd> button. This will run through your entire R script, or your selected lines of code. 
+
+```{r}
+#| echo: false
+#| fig-cap: "The Source Pane and R Sript"
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab1/panes_source.png") 
+``` 
+ 
+::: callout-note
+All lines entered in an R script are interpreted as code to be run by R, unless they begin with `#` (Shift + 3). Using `#` is useful for documenting and explaining your code, or for temporarily disabling sections of code.
+:::
+ 
+## Useful Resources
+
+This section lists some useful resources for your exploration of R.
+
+### Base R Cheat Sheet
+
+[Click here for more information](https://github.com/rstudio/cheatsheets/blob/main/base-r.pdf) 
+
+```{r}
+#| echo: false
+#| fig-cap: ""
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab1/cheatsheet1.png")
+knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab1/cheatsheet2.png")
+```
+
+
+### An Introduction to R
+
+[An Introduction to R, by Venables, W. N., Smith, D. M., & R Development Core Team](https://cran.r-project.org/doc/manuals/r-release/R-intro.pdf)
+
+
+## Exercise 
+
+Load the dataset "mpg" and work through the exercises below. Note, "mpg" is included in the tidyverse package, so you will need to load the package first.
+
+1. Calculate the **mean**, **range**, **minimum**, and **maximum** of the variable "hwy" across all models. Then, combine these statistics into one vector. (Tip: look up the RDocumentation for the functions `mean`, `range`, `min`, and `max`).
+
+2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km. 
+
+3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient? 
+
+4. Compute the quantiles of "hwy". Can you also calculate the tertiles instead? (Tip: look up for the RDocumentation for the function `quantile`). 
+
+5. Now, based on the tertiles you calculated, assign "least efficient", "medium", and "most efficient" labels to all models. Try using both base R indexing and the function `ifelse`. 
+
