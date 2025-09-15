@@ -23,7 +23,7 @@ library(tidyverse)
 
 ## Data Manipulation using dplyr
 
-### What is a tidy data set?
+### What is a Tidy Data Set?
 
 Tidy data is a standard way of mapping the meaning of a dataset to its structure. A dataset is messy or tidy depending on how rows, columns and tables are matched up with observations, variables and types. Three rules make a data tidy:
 
@@ -33,7 +33,7 @@ Tidy data is a standard way of mapping the meaning of a dataset to its structure
 
 3. Each value must have its own cell
 
-### Create a farm business data set
+### Create a Farm Business Data Set
 
 ```{r}
 # farmers' info
@@ -299,24 +299,42 @@ knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/la
 See Chapter 5 of [R for Data Science, by Wickham, H., & Grolemund, G.](https://cran.r-project.org/doc/manuals/r-release/R-intro.pdf)
 
 ### Exercise
+  
+#### Part A {-}
  
-Continue from the dataset "farm" used in this section, work through the exercises below.
+Continue from the farm business dataset "farm" used in Lab 2, work through the exercises below.
 
-1. Generate a new variable called **size3** that meets the following criterion: 
+  1. Create a new variable called **size3** that meets the following criteria: 
+  
+      i) size3 = “small” if size <= 200
+    
+      ii) size3 = “medium” if 200 < size <= 600
+    
+      iii) size3 = “big” if size > 600
+    
+      Finally, convert size3 to a factor variable that is ordinal from "small" to "big".  
+      
+  2. Generate the following summary statistics, for each type of the farms:
+  
+      i) the sum of all returns, called **tot.return**
+    
+      ii) the average returns, called **avg.return**
+    
+      Finally, rearrange the data based on the value of avg.return, in the descending order.
 
-- size3 = “small” if size <= 200
-- size3 = “median” if 200 < size <= 600
-- size3 = “big” if size > 600
+#### Part B {-}
+  
+Import data "mpg" and work through the coding below.
+   
+  1. Drop the variables **displ**, **drv** and **fl**, then exclude cars that were manufactured by **Hyundai** and **Pontiac** .
 
-Finally, convert **size3** to a factor variable. 
-
- 
-2. Generate the following summary statistics, for each type of the farms:
-
-1. the sum of all returns, called **tot.return**
-2. the average returns, called **avg.return**
-
-Finally, rearrange the data based on the value of avg.return, in the descending order.
+  2. Continue from your dataframe above and generate the summary statistics, for each manufacturer, model, and year:
+  
+      i) the average of "cty", called **avg.cty**
+    
+      ii) the average of "hwy", called **avg.hwy**
+    
+      iii) the total number of cars produced, called **tot.cars**
  
 ## Data Visualization using ggplot
 
@@ -668,7 +686,7 @@ base_plot <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent
 
 scale_x_y <- base_plot + 
               scale_x_continuous(limits = c(0, 50000), breaks = c(10000, 25000, 50000)) +
-              scale_y_continuous(limits = c(20, 70), breaks = c(30, 50, 70))
+              scale_y_continuous(limits = c(40, 70), breaks = c(40, 50, 70))
 
 base_plot + scale_x_y
 ```
@@ -752,15 +770,15 @@ To modify elements of a plot other than the data, such as axes, legend, or title
  
 bar_fill_mod <- bar_fill + labs(x = "Letters", y = "Numbers", fill = "Legend", title = "bar_fill Modified") +
                                 theme(
-                                  axis.title = element_text(size = 24, face = "bold"),
+                                  axis.title = element_text(size = 24),
                                   axis.text = element_text(size = 20),
                                   axis.text.x = element_text(angle = 45),
                                   
-                                  legend.title = element_text(size = 24, face = "bold"),
-                                  legend.text = element_text(size = 20),
+                                  legend.title = element_text(size = 16),
+                                  legend.text = element_text(size = 12),
                                   legend.position = "bottom",
                                   
-                                  title = element_text(size = 30, face = "bold")
+                                  plot.title = element_text(size = 30, face = "bold")
                                 )
         
 
@@ -853,6 +871,7 @@ ggsave("gdp_lifeExp.png", plot = base_plot_text, width = 10, height = 7)  # save
 
 ```{r}
 #| echo: false
+#| out-width: 95%
 #| fig-cap: ""
 knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet3.png")
 knitr::include_graphics("D:/Dropbox/Teaching/AREC513/Fall2025/materials/graph/lab2/cheatsheet4.png")
@@ -867,3 +886,63 @@ See Chapter 3 and 28 of [R for Data Science, by Wickham, H., & Grolemund, G.](ht
 See the third edition of [ggplot2: Elegant Graphics for Data Analysis, by Hadley Wickham, Danielle Navarro, and Thomas Lin Pedersen](https://ggplot2-book.org/).
 
 ### Exercise
+  
+#### Part A {-}
+
+Import data "mpg" and work through the exercises below.
+
+  1. Create a scatterplot that shows all of the following:
+  
+      i) use "cty" on the x-axis and "hwy" on the y-axis
+        
+      ii) assign different colors for "class" and different shapes for "year".  
+        (tip: since continuous variables cannot be mapped to `shape`, you will need to convert "year" to a factor using `factor()`)
+       
+      iii) fit **only one trend line** for all points  
+      
+  2. Create a scatterplot that shows all of the following:
+  
+      i) use "displ" on the x-axis and "hwy" on the y-axis
+        
+      ii) partition the graph into a grid by the combination of "drv" and "fl", but only include "fl" that equals "p" or "r"
+        
+      iii) fit a trend line in each graph within the grid
+    
+      (Tip: you can build from the example "p23" in Lab 2.) 
+      
+  3. Create a bar chart that shows the average "hwy" of all cars produced in 2008 by each of the following manufacturers:  
+  **Audi**, **Hyundai**, **Nissan** and **Volkswagen**. Assign a different color to each manufacturer. 
+  
+#### Part B {-}
+
+Import the data "gapminder" and try to reproduce the graph below.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 12
+#| fig-height: 6
+ 
+library(gapminder)
+
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point(shape = 17, size = 1.5) + 
+  geom_smooth() + 
+  facet_grid(continent ~ year, scales = "free") +
+  
+  labs(
+    title = "Relation between GDP per capita and Life Expectancy by Continent from 1952 to 2007",
+    x = "GDP per capita", y = "Life Expectancy", color = "Legend"
+  ) +
+  
+  theme(
+    axis.text.x = element_blank(), 
+    title = element_text(face = "bold")
+  )
+
+```
+
+
+
+
