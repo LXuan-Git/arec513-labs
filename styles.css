@@ -24,8 +24,8 @@ img { max-width: 100%; height: auto; } /* make images responsive and keep aspect
 @media (min-width: 992px) { /* apply only on large viewports */
 
   .sidebar { 
-    width: 280px !important; /* set fixed sidebar width */
-    flex: 0 0 280px !important; /* prevent flex growth/shrink */
+    width: 300px !important; /* set fixed sidebar width */
+    flex: 0 0 300px !important; /* prevent flex growth/shrink */
   } /* sidebar width control */
 
   .page-columns .content {
