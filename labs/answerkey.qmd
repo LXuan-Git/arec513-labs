@@ -9,78 +9,78 @@ format:
 
 The answer key is currently withheld and will be made available within one week after the lab.
 
-<!-- ## Lab 1  -->
+## Lab 1
 
-<!-- Load the dataset "mpg" and work through the exercises below. Note, "mpg" is included in the tidyverse package, so you will need to load the package first. -->
+Load the dataset "mpg" and work through the exercises below. Note, "mpg" is included in the tidyverse package, so you will need to load the package first.
 
-<!-- 1. Calculate the **mean**, **range**, **minimum**, and **maximum** of the variable "hwy" across all models. Then, combine these statistics into one vector. (Tip: look up the RDocumentation for the functions `mean`, `range`, `min`, and `max`). -->
+1. Calculate the **mean**, **range**, **minimum**, and **maximum** of the variable "hwy" across all models. Then, combine these statistics into one vector. (Tip: look up the RDocumentation for the functions `mean`, `range`, `min`, and `max`).
 
-<!-- ```{r}  -->
+```{r}
 
-<!-- library(tidyverse) -->
-<!-- data(mpg) -->
+library(tidyverse)
+data(mpg)
 
-<!-- mean_hwy <- mean(mpg$hwy) -->
-<!-- range_hwy <- range(mpg$hwy) -->
-<!-- min_hwy <- min(mpg$hwy) -->
-<!-- max_hwy <- max(mpg$hwy) -->
-<!-- sum_stats <- c(mean_hwy, range_hwy, min_hwy, max_hwy)  -->
-<!-- sum_stats -->
-<!-- ``` -->
+mean_hwy <- mean(mpg$hwy)
+range_hwy <- range(mpg$hwy)
+min_hwy <- min(mpg$hwy)
+max_hwy <- max(mpg$hwy)
+sum_stats <- c(mean_hwy, range_hwy, min_hwy, max_hwy)
+sum_stats
+```
 
-<!-- 2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km.  -->
+2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km.
 
-<!-- ```{r}  -->
+```{r}
 
-<!-- temp <- 235.215 / mpg$hwy -->
-<!-- mpg$hwy_Lp100km_1 <- temp -->
+temp <- 235.215 / mpg$hwy
+mpg$hwy_Lp100km_1 <- temp
 
-<!-- # Or, in one step -->
-<!-- mpg$hwy_Lp100km_2 <- 235.215 / mpg$hwy -->
+# Or, in one step
+mpg$hwy_Lp100km_2 <- 235.215 / mpg$hwy
 
-<!-- unique(mpg$hwy_Lp100km_1 == mpg$hwy_Lp100km_2) # sanity check -->
-<!-- ``` -->
+unique(mpg$hwy_Lp100km_1 == mpg$hwy_Lp100km_2) # sanity check
+```
 
-<!-- 3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient?  -->
+3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient?
 
-<!-- ```{r}  -->
+```{r}
 
-<!-- mpg$model[mpg$hwy == max(mpg$hwy)] -->
+mpg$model[mpg$hwy == max(mpg$hwy)]
 
-<!-- mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)] -->
+mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]
 
-<!-- unique(mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]) # using unique function to remove duplicates -->
-<!-- ``` -->
+unique(mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]) # using unique function to remove duplicates
+```
 
-<!-- 4. Compute the quantiles of "hwy". Can you also calculate the tertiles instead? (Tip: look up for the RDocumentation for the function `quantile`). -->
+4. Compute the quantiles of "hwy". Can you also calculate the tertiles instead? (Tip: look up for the RDocumentation for the function `quantile`).
 
-<!-- ```{r} -->
+```{r}
 
-<!-- quantile(mpg$hwy) -->
+quantile(mpg$hwy)
 
-<!-- quantile(mpg$hwy, probs = seq(0, 1, 0.333))  -->
-<!-- quantile(mpg$hwy, c(0, 0.333, 0.666, 1)) # you can achieve the same using this -->
-<!-- ``` -->
+quantile(mpg$hwy, probs = seq(0, 1, 0.333))
+quantile(mpg$hwy, c(0, 0.333, 0.666, 1)) # you can achieve the same using this
+```
 
-<!-- 5. Now, based on the tertiles you calculated, assign "least efficient", "medium", and "most efficient" labels to all models. Try using both base R indexing and the function `ifelse`. -->
+5. Now, based on the tertiles you calculated, assign "least efficient", "medium", and "most efficient" labels to all models. Try using both base R indexing and the function `ifelse`.
 
-<!-- ```{r} -->
+```{r}
 
-<!-- tertile <- quantile(mpg$hwy, c(0, 0.333, 0.666, 1)) -->
+tertile <- quantile(mpg$hwy, c(0, 0.333, 0.666, 1))
 
-<!-- mpg$efficient_class_1 <- NA # optional, this eliminates the warning message of "Unknown or uninitialised column" -->
-<!-- mpg$efficient_class_1[mpg$hwy < tertile[2]] <- "least efficient" -->
-<!-- mpg$efficient_class_1[mpg$hwy >= tertile[2] & mpg$hwy < tertile[3]] <- "medium" -->
-<!-- mpg$efficient_class_1[mpg$hwy >= tertile[3]] <- "most efficient" -->
+mpg$efficient_class_1 <- NA # optional, this eliminates the warning message of "Unknown or uninitialised column"
+mpg$efficient_class_1[mpg$hwy < tertile[2]] <- "least efficient"
+mpg$efficient_class_1[mpg$hwy >= tertile[2] & mpg$hwy < tertile[3]] <- "medium"
+mpg$efficient_class_1[mpg$hwy >= tertile[3]] <- "most efficient"
 
-<!-- # OR -->
-<!-- mpg$efficient_class_2 <- NA # given how ifelse functions are specified below, this step becomes necessary -->
-<!-- mpg$efficient_class_2 <- ifelse(mpg$hwy < tertile[2], "least efficient", mpg$efficient_class_2) -->
-<!-- mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[2] & mpg$hwy < tertile[3], "medium", mpg$efficient_class_2) -->
-<!-- mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[3], "most efficient", mpg$efficient_class_2) -->
+# OR
+mpg$efficient_class_2 <- NA # given how ifelse functions are specified below, this step becomes necessary
+mpg$efficient_class_2 <- ifelse(mpg$hwy < tertile[2], "least efficient", mpg$efficient_class_2)
+mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[2] & mpg$hwy < tertile[3], "medium", mpg$efficient_class_2)
+mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[3], "most efficient", mpg$efficient_class_2)
 
-<!-- unique(mpg$efficient_class_1 == mpg$efficient_class_2) # sanity check -->
-<!-- ``` -->
+unique(mpg$efficient_class_1 == mpg$efficient_class_2) # sanity check
+```
 
 
 <!-- ## Lab 2  -->

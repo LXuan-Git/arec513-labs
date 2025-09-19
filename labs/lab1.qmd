@@ -345,7 +345,7 @@ After loading the package, we can use the functions in *tidyverse*. *tidyverse* 
 
 R script is simply a text file containing a set of commands and comments, which allows you to save, edit, and execute your code. To create an R script, in the top toolbar, select <kbd>File > New File > R Script</kbd>.
 
-Opening an  R script creates a new pane to your RStudio, the **Source** pane. In this pane, you can edit and save your code. To run your code, you can hold *Ctrl* and press *Enter*, or click the <kbd>Run</kbd> button. This will run through your entire R script, or your selected lines of code. 
+Opening an  R script creates a new pane to your RStudio, the **Source** pane. In this pane, you can edit and save your code. To run your code, you can hold *Ctrl* and press *Enter*, or click the <kbd>Run</kbd> button. This will run the current line of code, or through your selected lines of code.
 
 ```{r}
 #| echo: false
