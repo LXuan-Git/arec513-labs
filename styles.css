@@ -31,7 +31,7 @@ img { max-width: 100%; height: auto; } /* make images responsive and keep aspect
   .page-columns .content {
     margin-left: 0 !important; /* remove leftover left margin/gutters */
     margin-right: 0 !important; /* remove leftover right margin/gutters */
-    padding-left: 24px; /* add a small gap between sidebar/TOC and content */
+    padding-left: 30px; /* add a small gap between sidebar/TOC and content */
   } /* content area next to sidebar */
 
 }
