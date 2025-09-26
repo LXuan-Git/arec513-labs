@@ -1,6 +1,273 @@
 ---
-title: "Lab 3: Title"
-number-sections: false 
+title: "Lab 3: Linear Regression and Statistical Inference"
+author: "Feng Qiu, Liyuan Xuan"
+date: "Sept 29, 2025"
+format:
+  html:
+    toc: true
+    toc-title: "Section"
+    df-print: default
 ---
 
-## In Construction
+## Preparation
+
+### Installing and Loading Packages
+
+```{r}
+# load packages that might be used in this section
+
+# install.packages(c("broom", "knitr", "car"))  # use this line to install the necessary packages
+
+library(broom)  # to extract summary information into a tidy data frame
+library(knitr)  # for better visualization of tables
+library(car)    # for hypothesis testing
+
+```
+
+### Read in External Data
+
+```{r}
+#| warning: false
+
+# read in data
+
+setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data/ch2_data_csv")
+wage <- read.csv(file = "wages1.csv") # make sure you are in the correct working directory
+
+# alternatively, you can do 
+# wage <- read.csv(file = "YOUR_FOLDER_PATH/wages1.csv") 
+
+head(wage)
+
+```
+
+## Summary Statistics 
+
+```{r}
+#| message: false
+
+sum_table_1 <- summary(wage)
+sum_table_1
+
+sum_table_2 <- tidy(wage) 
+sum_table_2
+
+sum_table_3 <- sum_table_2[, c(1, 2, 3, 4, 8, 9, 10, 11)]
+# or, try sum_table_3 <- sum_table_2[, c("column", "n", "mean", "sd", "min", "max", "range", "skew")]
+sum_table_3
+
+kable(sum_table_3, caption = "Descriptive Statistics", digits = 2)
+
+```
+
+To acquire summary statistics by group, you can do
+
+```{r}
+# wage rate by gender
+tapply(wage$wage, wage$male, summary)
+```
+
+## Ordinary Least Squares (OLS) Regression
+
+### Simple Linear Regression
+
+```{r}
+# estimate a simple OLS
+mod1 <- lm(wage ~ male, data = wage)
+sum_mod1 <- summary(mod1)
+print(sum_mod1) 
+
+# return names of "mod1", so you can extract the output you need via "$"
+names(mod1)
+mod1$coefficients
+
+names(sum_mod1)
+sum_mod1$coefficients
+
+```
+
+### Multiple Linear Regression
+
+```{r}
+# estimate a multiple OLS
+mod2 <- lm(wage ~ male + school + exper, data = wage)
+sum_mod2 <- summary(mod2)
+print(sum_mod2, signif = F)  # significance asterisk removed 
+
+# extract the goodness of fit
+gof <- c(r.squared = sum_mod2$r.squared, adj.r = sum_mod2$adj.r.squared)
+gof
+
+```
+
+## Results of OLS Regressions
+
+### Variance-Covariance Matrix
+
+Recall a typical variance-covariance matrix, showing variance along the diagonal and covariance off the diagonal.
+
+$$
+\text{Var}[X] =
+\begin{bmatrix}
+     \text{Var}(X_1) & \text{Cov}(X_1, X_2) & \text{Cov}(X_1, X_3) & \cdots & \text{Cov}(X_1, X_n) \\
+         \vdots      &    \text{Var}(X_2)   & \text{Cov}(X_2, X_3) & \cdots & \text{Cov}(X_2, X_n) \\
+         \vdots      &       \vdots         &     \text{Var}(X_3)  & \cdots & \text{Cov}(X_3, X_n) \\
+         \vdots      &       \vdots         &         \vdots       & \ddots &        \vdots        \\
+\text{Cov}(X_n, X_1) & \text{Cov}(X_n, X_2) & \text{Cov}(X_n, X_3) & \cdots &     \text{Var}(X_n)
+\end{bmatrix}
+$$
+
+```{r}
+# acquire the variance-covariance matrix
+vcv2 <- vcov(mod2)
+vcv2
+
+var_male <- vcv2[2, 2]
+var_male
+ 
+se_male <- sqrt(var_male) # check the standard error of beta_male
+se_male
+
+cov_male_school <- vcv2[2, 3]  # or vcv2[3, 2]
+cov_male_school 
+
+```
+
+### Confidence Interval
+
+Recall the formula for the confidence interval:
+
+$$
+CI_{1-\alpha}=[\hat{\beta_i} - t_{\alpha/2,df} \times SE(\hat{\beta_i}), \hat{\beta_i} + t_{\alpha/2,df} \times SE(\hat{\beta_i})]
+$$
+
+#### Calculate Confidence Interval using `confint()`
+  
+```{r}
+ci <- confint(mod2) 
+ci
+```
+
+:::callout-note
+`confint()` has to be used on a fitted model object, such as "mod2" (rather than "sum_mod2"). For details, check `?confint()`.
+:::
+
+
+#### Calculate Confidence Interval Manually
+
+```{r}
+beta <- sum_mod2$coefficients[, 1]
+se_beta <- sum_mod2$coefficients[, 2]
+  
+deg_f <- mod2$df.residual
+alpha <- 0.05
+t_crit <-  qt(1 - alpha / 2, deg_f)
+  
+lower_bound <- beta - t_crit * se_beta
+upper_bound <- beta + t_crit * se_beta
+  
+ci_manual <- matrix(c(lower_bound, upper_bound), nrow = 4, ncol = 2,
+                     dimnames = list(c(names(lower_bound)), # assigning row names to the new matrix
+                                     c(colnames(ci)))       # assigning col names 
+                    )
+ci_manual
+```
+
+:::callout-tip
+As we saw earlier, `qt(p, df)` is used to extract critical values for the t distribution, the "q" here means quantile function. Explore other related functions for the t distribution as, `dt(x, df)` for density, `pt(q, df)` for distribution function, and `rt(n, df)` for random generation.
+
+Similarly:
+
+- For the F distribution, `df(x, df1, df2)`, `pf(q, df1, df2)`, `qf(p, df1, df2)`, and `rf(n, df1, df2)`.
+
+- For the $\chi^2$ distribution, `dchisq(x, df)`, `pchisq(q, df)`, `qchisq(p, df)`, and `rchisq(n, df)`.
+
+- For the normal distribution, `dnorm(x)`, `pnorm(q)`, `qnorm(p)`, and `rnorm(n)`.
+:::
+
+
+### Hypothesis Testing
+
+Recall the general process of hypothesis testing (two-tailed) for coefficients, for example, testing if $\beta_i$ equals a certain constant $c$
+
+$$
+H_0:\beta_i = c
+$$
+$$
+H_1:\beta_i \neq c
+$$
+The calculation of the test statistic is
+$$
+t = \frac{\hat{\beta_i}-c}{SE(\hat{\beta_i})}
+$$
+The test statistic is then compared with the critical values of the t distribution $t^*_{\alpha/2, df}$, at specified significance level $\alpha$ and degree of freedom.
+
+- $H_0$ is rejected, if $|t| \geq t^*_{\alpha/2, df}$
+
+- $H_0$ is not rejected, if $|t| < t^*_{\alpha/2, df}$
+
+Suppose we wish to test if $H_0:\beta_{school} = 0.5$ against $H_1:\beta_{school} \neq 0.5$ at 5% significance level: 
+
+#### Calculate t Statistics Manually
+
+```{r}
+beta_school <- sum_mod2$coefficients[3, 1]
+se_school <- sum_mod2$coefficients[3, 2]
+t_stat <- (beta_school - 0.5) / se_school
+
+t_stat >= t_crit 
+```
+
+#### Hypothesis Testing using `linearHypothesis()`
+
+Enabled by the package "car", `linearHypothesis()` can also be used to hypothesis testing. 
+
+```{r}
+linearHypothesis(mod2, "school = 0.5")  # check the critical value for F stat using qf(1 - alpha, 3291, 3290) 
+```
+
+:::callout-important
+Since `linearHypothesis()` performs an F test, it can also be used for testing on multiple variables. Try `linearHypothesis(mod2, "school = male")`. 
+:::
+
+##  Prediction with Linear Regression
+
+Given our fitted model "mod2", we can now use it to perform prediction. Suppose we wish to predict the wage per hour for
+
+1. A male and a female worker with 16 years of schooling
+
+2. Other variables (i.e. "exper") are kept at the average level
+
+```{r} 
+pred_data <- data.frame(male = c(female = 0, male = 1), 
+                        school = 16, 
+                        exper = mean(wage$exper)
+                        )
+pred_data
+
+yhat <- predict(mod2, pred_data)
+yhat
+
+# visualizing the prediction
+hist(wage$wage, xlab = "Wage", main = "Histogram of Wage per Hour")
+abline(v = yhat, col = c("red", "blue"), lwd = 3)
+
+```
+ 
+## Exercise
+
+Continue from your multiple linear regression "mod2":
+
+1. Calculate the R-squared using $y_i$ and $\hat{y}_i$, that is
+  $$
+  R^2 = corr(y_i, \hat{y}_i)^2
+  $$
+  (tip: you can retrieve the fitted values $\hat{y}_i$ via `mod2$fitted.values`.)
+
+2. Construct the confidence interval for $\hat{\beta}_{male}$, with the significance level of 10%.
+
+3. Test $H_0:\beta_{exper} = 0.15$,  with the significance level of 10%. 
+
+4. Test $H_0:\beta_{school} + \beta_{exper} = 0.75$,  with the significance level of 1%. 
+
+5. Predict the wage per hour for a male worker with 18 years of schooling and 0 years of experience.
