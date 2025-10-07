@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Feng Qiu, Liyuan Xuan">
+<meta name="dcterms.date" content="2025-10-20">
 
-<title>Lab 4: Title – R Labs for AREC 513 - Econometric Applications</title>
+<title>Lab 3: OLS, Regression Diagnostics, and Instrumental Variables – R Labs for AREC 513 - Econometric Applications</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -4776,10 +4778,10 @@ vertical-align: -.125em;
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="2">
-    <h2 id="toc-title">On this page</h2>
+    <h2 id="toc-title">Section</h2>
    
   <ul>
-  <li><a href="#in-construction" id="toc-in-construction" class="nav-link active" data-scroll-target="#in-construction">In Construction</a></li>
+  <li><a href="#in-construction" id="toc-in-construction" class="nav-link active" data-scroll-target="#in-construction"><span class="header-section-number">1</span> In Construction</a></li>
   </ul>
 </nav>
 </nav>
@@ -4792,14 +4794,26 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lab 4: Title</h1>
+<h1 class="title">Lab 3: OLS, Regression Diagnostics, and Instrumental Variables</h1>
 </div>
 
 
 
 <div class="quarto-title-meta column-page-right">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Feng Qiu, Liyuan Xuan </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 20, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -4809,8 +4823,232 @@ vertical-align: -.125em;
 </header>
 
 
-<section id="in-construction" class="level2">
-<h2 class="anchored" data-anchor-id="in-construction">In Construction</h2>
+<section id="in-construction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="in-construction"><span class="header-section-number">1</span> In Construction</h2>
+<!-- ## Preparation -->
+<!-- ### Loading Packages -->
+<!-- ```{r} -->
+<!-- # load packages might be used in this section -->
+<!-- library(stargazer)  # for better visualization of results -->
+<!-- library(lmtest) # statistical test for linear regression models -->
+<!-- library(car)  # for diagnostics, such as vif  -->
+<!-- library(estimatr) # for robust estimation -->
+<!-- library(effects)  # to compute marginal effects -->
+<!-- library(AER) # for IV regression  -->
+<!-- ``` -->
+<!-- ### Read in External Data -->
+<!-- ```{r} -->
+<!-- # read in data -->
+<!-- setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data/ch3_data_csv") -->
+<!-- males <- read.csv(file = 'males1987_updated.csv') # make sure you are in the correct working directory   -->
+<!-- head(males) -->
+<!-- # change variable names to lowercase -->
+<!-- names(males) <- tolower(names(males)) -->
+<!-- head(males, n = 5) -->
+<!-- ``` -->
+<!-- ## Put multiple model outputs together  -->
+<!-- ```{r} -->
+<!-- eq.a <- logwage ~ school + exper + union + mar + black + hisp -->
+<!-- eq.b <- logwage ~ school + exper +I(exper^2) + union + mar + black+ hisp -->
+<!-- mod.a <- lm(eq.a, data = males) -->
+<!-- mod.b <- lm(eq.b, data = males) -->
+<!-- stargazer(mod.a, mod.b,  -->
+<!--           type = "text", -->
+<!--           digits = 3, -->
+<!--           title = "Model comparision: linear vs. quadratic", -->
+<!--           intercept.bottom=FALSE, -->
+<!--           dep.var.caption="Dependent variable: log(wage)", -->
+<!--           dep.var.labels.include = FALSE, -->
+<!--           model.numbers = FALSE, -->
+<!--           column.labels=c("Linear", "Quadatic"), -->
+<!--           no.space = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+<!-- ## Run OLS without the intercept -->
+<!-- ```{r} -->
+<!-- ## use -1 -->
+<!-- mod.c <- lm(logwage ~ -1 + school + exper + union + mar + black + hisp,  -->
+<!--    data = males) -->
+<!-- summary(mod.c) -->
+<!-- ``` -->
+<!-- ## Variance Inflation Factors: multicolinearity -->
+<!-- ```{r} -->
+<!-- # Automatically calculate VIF from regression output -->
+<!-- # vif > 10 may indicate a problem -->
+<!-- vif(mod.a) -->
+<!-- ``` -->
+<!-- ## Marginal effects -->
+<!-- ```{r} -->
+<!-- # Automatic effects plot using the package "effects" -->
+<!-- # library(effects) -->
+<!-- summary(mod.b) -->
+<!-- plot( effect("school", mod.a) ) -->
+<!-- plot( effect("exper", mod.b) )  -->
+<!-- ``` -->
+<!-- ## Separate estimation -->
+<!-- ```{r} -->
+<!-- # Estimate model for union =1 -->
+<!-- eq.c <- logwage ~ school + exper + mar + black + hisp -->
+<!-- mod.d <- lm(eq.c, data = males, subset=(union == 1 )) -->
+<!-- # Estimate model for union =0 -->
+<!-- mod.e <- lm(eq.c, data = males, subset=(union == 0 )) -->
+<!-- stargazer(mod.d, mod.e,  -->
+<!--           type = "text", -->
+<!--           digits = 3, -->
+<!--           title = "Union impacts", -->
+<!--           intercept.bottom=FALSE, -->
+<!--           dep.var.caption="Dependent variable: log(wage)", -->
+<!--           dep.var.labels.include = FALSE, -->
+<!--           model.numbers = FALSE, -->
+<!--           column.labels=c("Union", "Non-union"), -->
+<!--           no.space = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- # Estimate model for union =0 and mar =1 -->
+<!-- mod.f <- lm(eq.a, data = males, subset=(union == 0 & mar == 1)) -->
+<!-- stargazer(mod.d, mod.e, mod.f, -->
+<!--           type = "text", -->
+<!--           digits = 3, -->
+<!--           title = "Union impacts", -->
+<!--           intercept.bottom=FALSE, -->
+<!--           dep.var.caption="Dependent variable: log(wage)", -->
+<!--           dep.var.labels.include = FALSE, -->
+<!--           model.numbers = FALSE, -->
+<!--           column.labels=c("Union", "Non-union", "Non-u+Mar"), -->
+<!--           no.space = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+<!-- ## Heteroskedasticity -->
+<!-- ```{r} -->
+<!-- ## (1) Breusch-Pagan test -->
+<!-- bptest(mod.a) -->
+<!-- # or you can do it manually -->
+<!-- # Manual regression of squared residuals  -->
+<!-- summary(lm( resid(mod.a)^2 ~ school + exper + union + mar + black  -->
+<!--             + hisp, data = males)) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- ## (2) robust standard error -->
+<!-- # regression results summary -->
+<!-- summary(mod.a) -->
+<!-- # you can use coeftest() -->
+<!-- coeftest(mod.a) -->
+<!-- # hetero-robust t-test -->
+<!-- # Heteroscedasticity-Corrected Covariance Matrices: hccm -->
+<!-- # check ?hccm for the help document, hc0-hc4 -->
+<!-- # classic White VCOV: hc0 -->
+<!-- coeftest(mod.a, vcov = hccm(mod.a, type="hc0")) -->
+<!-- # refined White VCOV: hc1, hc2, and hc3; hc3 is the default option -->
+<!-- # works better if your sample size is small -->
+<!-- coeftest(mod.a, vcov = hccm(mod.a, type="hc3")) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- ## (3) Weighted least square (WLS) regression -->
+<!-- # if you want to multiply the model by 1/sqrt(x), -->
+<!-- # you need to set w = 1/x -->
+<!-- w <- 1/males$school -->
+<!-- mod.g <- lm(eq.a, weight = w, data = males) -->
+<!-- summary(mod.g) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- stargazer(mod.a, mod.g, -->
+<!--           type = "text", -->
+<!--           digits = 3, -->
+<!--           title = "OLS vs. WLS", -->
+<!--           intercept.bottom=FALSE, -->
+<!--           dep.var.caption="Dependent variable: log(wage)", -->
+<!--           dep.var.labels.include = FALSE, -->
+<!--           model.numbers = FALSE, -->
+<!--           column.labels=c("OLS", "WLS"), -->
+<!--           no.space = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- ## (4) you can also run regression with robust s.e. using   -->
+<!-- ## package "estimatr", function lm_robust -->
+<!-- mod.h <- lm_robust(eq.a, data = males, se_type = "HC3") -->
+<!-- summary(mod.h) -->
+<!-- # results will be the same as -->
+<!-- coeftest(mod.a, vcov = hccm(mod.a, type="hc3")) -->
+<!-- ``` -->
+<!-- ## Endogeneity -->
+<!-- ```{r} -->
+<!-- # read in data -->
+<!-- school <- read.csv(file = 'school.csv') -->
+<!-- head(school) -->
+<!-- school <- school[, c("black", "smsa76", "south76", "age76", "ed76", -->
+<!--                      "daded", "momed", "wage76")] -->
+<!-- head(school) -->
+<!-- # OLS  -->
+<!-- eq.wage <- log(wage76) ~ ed76 + age76 + black + smsa76 + south76 -->
+<!-- mod.e1 <- lm(eq.wage, data = school) -->
+<!-- summary(mod.e1) -->
+<!-- # education (ed76) might be endogenous, we want to use  -->
+<!-- # dad education as an IV -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- # (1) use IV estimator -->
+<!-- mod.iv <- ivreg(log(wage76) ~ ed76 + age76 + black + smsa76  -->
+<!--               + south76 | age76 + black + smsa76 + south76 + daded, -->
+<!--               data = school) -->
+<!-- summary(mod.iv) -->
+<!-- # (2) use 2sls -->
+<!-- # stage 1 -->
+<!-- mod.s1 <- lm(ed76 ~ age76 + black + smsa76 + south76 + daded, -->
+<!--              data = school) -->
+<!-- # stage 2 -->
+<!-- ed76.hat <- mod.s1$fitted.values -->
+<!-- mod.s2 <- lm(log(wage76) ~ ed76.hat + age76 + black +  -->
+<!--                  smsa76 + south76, data = school) -->
+<!-- summary(mod.s2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- # (3) put the 2sls together with IV,  -->
+<!-- # coefficients are the same, and s.e. are not -->
+<!-- stargazer(mod.iv, mod.s2, -->
+<!--           type = "text", -->
+<!--           digits = 4, -->
+<!--           title = "IV vs. 2SLS", -->
+<!--           intercept.bottom=FALSE, -->
+<!--           dep.var.caption="Dependent variable: log(wage)", -->
+<!--           dep.var.labels.include = FALSE, -->
+<!--           model.numbers = FALSE, -->
+<!--           column.labels=c("IV", "2SLS"), -->
+<!--           no.space = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- ## (4) multiple IVs -->
+<!-- mod.iv2 <- ivreg(log(wage76) ~ ed76 + age76 + black + smsa76  -->
+<!--                 + south76 | age76 + black + smsa76 + south76 -->
+<!--                 + daded + momed, data = school) -->
+<!-- summary(mod.iv2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- stargazer(mod.iv, mod.iv2, mod.s2, -->
+<!--           type = "text", -->
+<!--           digits = 4, -->
+<!--           title = "IV vs. 2SLS", -->
+<!--           intercept.bottom=FALSE, -->
+<!--           dep.var.caption="Dependent variable: log(wage)", -->
+<!--           dep.var.labels.include = FALSE, -->
+<!--           model.numbers = FALSE, -->
+<!--           column.labels=c("IV","IV2", "2SLS"), -->
+<!--           no.space = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- ## (5) specification tests -->
+<!-- summary(mod.iv, diagnostics = TRUE) -->
+<!-- # weak instruments test, cannot reject the null, so IV is strong -->
+<!-- # Hausman test, cannot reject the null, so no endogeneity issue -->
+<!-- summary(mod.iv2, diagnostics = TRUE) -->
+<!-- # weak instruments test, reject the null, so IV is strong -->
+<!-- # Hausman test, cannot reject the null, so no endogeneity issue -->
+<!-- # Sargan test, cannot reject at the 5% level, but reject at 10% -->
+<!-- # so extra IV is marginally valid -->
+<!-- ``` -->
 
 
 </section>

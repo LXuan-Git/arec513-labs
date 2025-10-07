@@ -11,7 +11,7 @@ Welcome! This website is for the R labs for **AREC513 - Econometric Applications
 
 ### Schedule
 
-The lab sessions will take place in **GSB 2-17** from **2:00 – 3:50 PM** on the following dates:
+The lab sessions will take place in **GSB 7-11** from **2:00 – 3:50 PM** on the following dates:
 
 - Lab 1 (by Liyuan Xuan) — Sept 15  
 
@@ -29,6 +29,10 @@ The lab sessions will take place in **GSB 2-17** from **2:00 – 3:50 PM** on th
 
 - Lab 8 (by Feng Qiu) — Dec 8 
 
+### Office Hours and Location
+
+Office hours are held weekly on Tuesdays **from 10:30 to 11:30 AM in Room 554, General Services Building**. To schedule a separate appointment, please email Liyuan at lxuan@ualberta.ca. 
+
 ### Software
 
 The software will be used for the lab sessions are **R** and **RStudio**. For instruction regarding installation, please navigate to [Lab 1](labs/lab1.qmd).
@@ -36,7 +40,7 @@ The software will be used for the lab sessions are **R** and **RStudio**. For in
 ### Acknowledgement
 
 Part of the code used in this website is adapted from Dr. Qiu’s previous handouts for AREC 513.
-
+ 
 ### Contact
 
 The website is maintained by [Liyuan Xuan](https://apps.ualberta.ca/directory/person/lxuan). For questions or suggestions, feel free to contact Liyuan at <lxuan@ualberta.ca>.

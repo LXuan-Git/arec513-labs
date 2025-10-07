@@ -138,7 +138,7 @@ cov_male_school
 Recall the formula for the confidence interval:
 
 $$
-CI_{1-\alpha}=[\hat{\beta_i} - t_{\alpha/2,df} \times SE(\hat{\beta_i}), \hat{\beta_i} + t_{\alpha/2,df} \times SE(\hat{\beta_i})]
+CI_{1-\alpha}=[\hat{\beta_i} - t_{1-\alpha/2,df} \times SE(\hat{\beta_i}), \hat{\beta_i} + t_{1-\alpha/2,df} \times SE(\hat{\beta_i})]
 $$
 
 #### Calculate Confidence Interval using `confint()`

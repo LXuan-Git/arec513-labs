@@ -6,16 +6,14 @@ format:
     toc-title: "Exercise"  
     number-sections: false 
 ---
-
-The answer key is currently withheld and will be made available within one week after the lab.
-
-## Lab 1
+  
+## Lab 1 
 
 Load the dataset "mpg" and work through the exercises below. Note, "mpg" is included in the tidyverse package, so you will need to load the package first.
 
 1. Calculate the **mean**, **range**, **minimum**, and **maximum** of the variable "hwy" across all models. Then, combine these statistics into one vector. (Tip: look up the RDocumentation for the functions `mean`, `range`, `min`, and `max`).
 
-```{r}
+```{r} 
 
 library(tidyverse)
 data(mpg)
@@ -24,13 +22,13 @@ mean_hwy <- mean(mpg$hwy)
 range_hwy <- range(mpg$hwy)
 min_hwy <- min(mpg$hwy)
 max_hwy <- max(mpg$hwy)
-sum_stats <- c(mean_hwy, range_hwy, min_hwy, max_hwy)
+sum_stats <- c(mean_hwy, range_hwy, min_hwy, max_hwy) 
 sum_stats
 ```
 
-2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km.
+2. Since "hwy" is measured in miles per gallon, create a new variable in mpg that expresses "hwy" in litres per 100 km. 
 
-```{r}
+```{r} 
 
 temp <- 235.215 / mpg$hwy
 mpg$hwy_Lp100km_1 <- temp
@@ -41,9 +39,9 @@ mpg$hwy_Lp100km_2 <- 235.215 / mpg$hwy
 unique(mpg$hwy_Lp100km_1 == mpg$hwy_Lp100km_2) # sanity check
 ```
 
-3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient?
+3. Identify the models of cars that are most fuel-efficient. Which classes of cars are least fuel-efficient? 
 
-```{r}
+```{r} 
 
 mpg$model[mpg$hwy == max(mpg$hwy)]
 
@@ -58,7 +56,7 @@ unique(mpg$class[mpg$hwy_Lp100km_1 == max(mpg$hwy_Lp100km_1)]) # using unique fu
 
 quantile(mpg$hwy)
 
-quantile(mpg$hwy, probs = seq(0, 1, 0.333))
+quantile(mpg$hwy, probs = seq(0, 1, 0.333)) 
 quantile(mpg$hwy, c(0, 0.333, 0.666, 1)) # you can achieve the same using this
 ```
 
@@ -81,63 +79,62 @@ mpg$efficient_class_2 <- ifelse(mpg$hwy >= tertile[3], "most efficient", mpg$eff
 
 unique(mpg$efficient_class_1 == mpg$efficient_class_2) # sanity check
 ```
-
-
-## Lab 2
+  
+## Lab 2 
 
 ### Data Manipulation using dplyr
 
 #### Part A {-}
-
+ 
 Continue from the farm business dataset "farm" used in Lab 2, work through the exercises below.
 
-  1. Create a new variable called **size3** that meets the following criteria:
-
+  1. Create a new variable called **size3** that meets the following criteria: 
+  
       i) size3 = “small” if size <= 200
-
+    
       ii) size3 = “medium” if 200 < size <= 600
-
+    
       iii) size3 = “big” if size > 600
-
-      Finally, convert size3 to a factor variable that is ordinal from "small" to "big".
-
+    
+      Finally, convert size3 to a factor variable that is ordinal from "small" to "big".  
+  
 ```{r}
 #| warning: false
 #| message: false
 
 name <- c("Henry", "Larry", "Alex", "Gaby", "Amy", "Ruby")
 sex <- c("male", "male", "male", "female", "female", "female")
-age <- c(43, 60, 25, 50, 28, 58)
-type <- c("crop", "livestock", "urban", "dairy", "crop", "livestock")
-size <- c(550, 800, 10, 600, 1000, 700)
+age <- c(43, 60, 25, 50, 28, 58) 
+type <- c("crop", "livestock", "urban", "dairy", "crop", "livestock") 
+size <- c(550, 800, 10, 600, 1000, 700) 
 return <- c(40, 90, 50, 90, 90, 95)
 
 farm <- data.frame(name, age, sex, type, size, return)
-
+ 
 farm <- farm %>% mutate(size3 = ifelse(size <= 200, "small", NA)) %>%
                  mutate(size3 = ifelse(size > 200 & size <= 600, "medium", size3)) %>%
                  mutate(size3 = ifelse(size > 600, "big", size3)) %>%
                  mutate(size3 = factor(size3, levels = c("small", "medium", "big")))
 
 farm
-farm$size3
+farm$size3  
 
 ```
-
+ 
   2. Generate the following summary statistics, for each type of the farms:
-
+  
       i) the sum of all returns, called **tot.return**
-
+    
       ii) the average returns, called **avg.return**
-
+    
       Finally, rearrange the data based on the value of avg.return, in the descending order.
-
+  
 ```{r}
 #| warning: false
 #| message: false
 
 farm.sum <- farm %>% group_by(type) %>%
-                     summarize(tot.return = sum(return),
+                     summarize(tot.return = sum(return), 
                                avg.return = mean(return))
 
 farm.sum <- arrange(farm.sum, desc(avg.return))
@@ -146,9 +143,9 @@ farm.sum
 ```
 
 #### Part B {-}
-
+  
 Import data "mpg" and work through the coding below.
-
+   
   1. Drop the variables **displ**, **drv** and **fl**, then exclude cars that were manufactured by **Hyundai** and **Pontiac** .
 
 ```{r}
@@ -157,23 +154,23 @@ Import data "mpg" and work through the coding below.
 
 data(mpg)     # you may need to library(tidyverse) first
 
-mpg <- mpg %>% select(-displ, -drv, -fl) %>%
+mpg <- mpg %>% select(-displ, -drv, -fl) %>% 
                filter(manufacturer != "hyundai" & manufacturer != "pontiac")
 
-head(mpg)
+head(mpg)      
 
 unique(mpg$manufacturer)
 
 ```
 
   2. Continue from your dataframe above and generate the summary statistics, for each manufacturer, model, and year:
-
+  
       i) the average of "cty", called **avg.cty**
-
+    
       ii) the average of "hwy", called **avg.hwy**
-
+    
       iii) the total number of cars produced, called **tot.cars**
-
+  
 ```{r}
 #| warning: false
 #| message: false
@@ -185,7 +182,7 @@ mpg.sum <- mpg %>% group_by(manufacturer, model, year) %>%
 
 head(mpg.sum)
 
-```
+``` 
 
 ### Data Visualization using ggplot
 
@@ -194,14 +191,14 @@ head(mpg.sum)
 Import data "mpg" and work through the exercises below.
 
   1. Create a scatterplot that shows all of the following:
-
+  
       i) use "cty" on the x-axis and "hwy" on the y-axis
-
-      ii) assign different colors for "class" and different shapes for "year".
+        
+      ii) assign different colors for "class" and different shapes for "year".  
         (tip: since continuous variables cannot be mapped to `shape`, you will need to convert "year" to a factor using `factor()`)
-
-      iii) fit **only one trend line** for all points
-
+       
+      iii) fit **only one trend line** for all points 
+  
 ```{r}
 #| warning: false
 #| message: false
@@ -217,32 +214,32 @@ ggplot(mpg) +
 ```
 
   2. Create a scatterplot that shows all of the following:
-
+  
       i) use "displ" on the x-axis and "hwy" on the y-axis
-
+        
       ii) partition the graph into a grid by the combination of "drv" and "fl", but only include "fl" that equals "p" or "r"
-
+        
       iii) fit a trend line in each graph within the grid
-
-      (Tip: you can build from the example "p23" in Lab 2.)
-
+    
+      (Tip: you can build from the example "p23" in Lab 2.) 
+  
 ```{r}
 #| warning: false
 #| message: false
 #| fig-width: 10
 #| fig-height: 6
-
+ 
 mpg.mod <- mpg %>% filter(fl == "p" | fl == "r")
 
 ggplot(mpg.mod, aes(x = displ, y = hwy)) +
   geom_point() +
-  geom_smooth() +
+  geom_smooth() + 
   facet_grid(drv ~ fl)
 
 ```
 
-  3. Create a bar chart that shows the average "hwy" of all cars produced in 2008 by each of the following manufacturers:
-  **Audi**, **Hyundai**, **Nissan** and **Volkswagen**. Assign a different color to each manufacturer.
+  3. Create a bar chart that shows the average "hwy" of all cars produced in 2008 by each of the following manufacturers:  
+  **Audi**, **Hyundai**, **Nissan** and **Volkswagen**. Assign a different color to each manufacturer. 
 
 ```{r}
 #| warning: false
@@ -252,7 +249,7 @@ ggplot(mpg.mod, aes(x = displ, y = hwy)) +
 
 mpg.sum <- mpg %>% filter(manufacturer == "audi" | manufacturer == "hyundai" |
                           manufacturer == "nissan" | manufacturer == "volkswagen") %>%
-                   filter(year == 2008) %>%
+                   filter(year == 2008) %>% 
                    group_by(manufacturer) %>%
                    summarize(mean_hwy = mean(hwy))
 
@@ -269,22 +266,90 @@ Import the data "gapminder" and try to reproduce the graph below.
 #| message: false
 #| fig-width: 12
 #| fig-height: 6
-
+ 
 library(gapminder)
 
 ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
-  geom_point(shape = 17, size = 1.5) +
-  geom_smooth() +
+  geom_point(shape = 17, size = 1.5) + 
+  geom_smooth() + 
   facet_grid(continent ~ year, scales = "free") +
-
+  
   labs(
     title = "Relation between GDP per capita and Life Expectancy by Continent from 1952 to 2007",
     x = "GDP per capita", y = "Life Expectancy", color = "Legend"
   ) +
-
+  
   theme(
-    axis.text.x = element_blank(),
+    axis.text.x = element_blank(), 
     title = element_text(face = "bold")
   )
+ 
+```
+
+## Lab 3 
+
+Continue from your multiple linear regression "mod2":
+
+1. Calculate the R-squared using $y_i$ and $\hat{y}_i$, that is
+  $$
+  R^2 = corr(y_i, \hat{y}_i)^2
+  $$
+  (tip: you can retrieve the fitted values $\hat{y}_i$ via `mod2$fitted.values`.)
+  
+```{r}
+
+wage <- read.csv(file = "D:/Dropbox/Teaching/AREC513/Fall2025/materials/data/ch2_data_csv/wages1.csv") 
+mod2 <- lm(wage ~ male + school + exper, data = wage)
+sum_mod2 <- summary(mod2)
+
+y     <- wage$wage
+yhat  <- mod2$fitted.values
+R2_via_corr <- cor(y, yhat)^2
+R2_via_corr
+
+```
+
+2. Construct the confidence interval for $\hat{\beta}_{male}$, with the significance level of 10%.
+
+```{r}
+
+ci_male_90 <- confint(mod2, parm = "male", level = 0.90)
+ci_male_90
+
+```
+
+{{< pagebreak >}}
+
+3. Test $H_0:\beta_{exper} = 0.15$,  with the significance level of 10%. 
+
+```{r}
+
+beta_exper <- sum_mod2$coefficients["exper","Estimate"]
+se_exper   <- sum_mod2$coefficients["exper","Std. Error"]
+df         <- mod2$df.residual
+t_stat     <- (beta_exper - 0.15) / se_exper
+
+t_crit <-  qt(1 - 0.10 / 2, df)
+t_stat >= t_crit   # gives False, hence do not reject H0
+
+```
+
+4. Test $H_0:\beta_{school} + \beta_{exper} = 0.75$,  with the significance level of 1%.
+
+```{r}
+#| message: false
+
+library(car)
+linearHypothesis(mod2, c("school + exper = 0.75"))   # do not reject H0, given the F stats or p-value
+
+```
+
+5. Predict the wage per hour for a male worker with 18 years of schooling and 0 years of experience.
+
+```{r} 
+
+pred_data <- data.frame(male = 1, school = 18, exper = 0)
+
+predict(mod2, newdata = pred_data)
 
 ```
