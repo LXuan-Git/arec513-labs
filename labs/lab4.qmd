@@ -1,5 +1,5 @@
 ---
-title: "Lab 3: OLS, Regression Diagnostics, and Instrumental Variables"
+title: "Lab 4: OLS, Regression Diagnostics, and Instrumental Variables"
 author: "Feng Qiu, Liyuan Xuan"
 date: "Oct 20, 2025"
 format:
