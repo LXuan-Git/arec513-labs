@@ -6,312 +6,388 @@ format:
   html:
     toc: true
     toc-title: "Section"
----
+--- 
+
+## Preparation
+
+### Loading Packages
+
+```{r}
+#| message: false
+library(stargazer)  # for better visualization of results
+library(lmtest)     # statistical test for linear regression models
+library(car)        # for diagnostics, such as vif
+library(estimatr)   # for robust estimation
+library(effects)    # to compute marginal effects
+library(AER)        # for IV regression
+
+# library(Ecdat)    # the dataset "Males" and "Schooling" is also available online from package "Ecdat" 
+```
+
+### Read in External Data
+
+```{r}
+setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data")
+males <- read.csv(file = "ch3_data_csv/males1987_updated.csv") # make sure you are in the correct working directory
+head(males)
+
+# change variable names to lowercase
+names(males) <- tolower(names(males))
+head(males)
+```
+
+## Model Estimation
+
+### Model Specification: Linear vs. Quadratic
+
+```{r}
+eq.a <- logwage ~ school + exper + union + mar + black + hisp
+eq.b <- logwage ~ school + exper +I(exper^2) + union + mar + black+ hisp
+
+mod.a <- lm(eq.a, data = males)
+mod.b <- lm(eq.b, data = males)
+
+stargazer(mod.a, mod.b,
+          type = "text",
+          digits = 3,
+          title = "Model comparison: linear vs. quadratic",
+          intercept.bottom=FALSE,
+          dep.var.caption="Dependent variable: log(wage)",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels=c("Linear", "Quadratic"),
+          no.space = TRUE
+          )
+```
+:::callout-note
+Sometimes we are not only interested in the effects of an explanatory variable on our dependent variable, but also if such effects vary as the level of this explanatory variable changes. Using the regression above as an example, try to take the derivative of "wage(log)" with respect to "exper".
+:::
+
+### Marginal effects
+
+Visualize the marginal effects of our explanatory variables, we can combine `plot()` with `effect()` from the package "effects".
+
+```{r}  
+plot(effect("school", mod.a))
+plot(effect("exper", mod.b)) 
+```
+
+### Subsample Analysis
+
+To estimate the same regression on a subsample of our data, we can utilize the `subset` argument of function `lm()`.
+
+```{r}
+# Estimate separate model for unionized (union == 1) and non-unionized workers (union == 0)
+
+eq.c <- logwage ~ school + exper + mar + black + hisp
+
+mod.d <- lm(eq.c, data = males, subset = (union == 1)) 
+mod.e <- lm(eq.c, data = males, subset = (union == 0))
+
+stargazer(mod.d, mod.e,
+          type = "text",
+          digits = 3,
+          title = "Union impacts",
+          intercept.bottom = FALSE,
+          dep.var.caption = "Dependent variable: log(wage)",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels = c("Union", "Non-union"),
+          no.space = TRUE
+          ) 
+```
+ 
+```{r}
+#| warning: false
+  
+# Estimate model for non-unionized (union == 0) and married workers (mar == 1)
+mod.f <- lm(eq.a, data = males, subset=(union == 0 & mar == 1))
+
+stargazer(mod.d, mod.e, mod.f,
+          type = "text",
+          digits = 3,
+          title = "Union impacts",
+          intercept.bottom = FALSE,
+          dep.var.caption = "Dependent variable: log(wage)",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels = c("Union", "Non-union", "Non-union and Married"),
+          no.space = TRUE
+          )
+```
+ 
+## Multicollinearity Diagnostics
 
-## In Construction
+Recall that multicollinearity means there is an exact or approximate linear relationship existing between the explanatory variables. To detect whether you have multicollinearity, we can calculate the Variance Inflation Factors (VIF) for our linear models using function `vif()` from the package "car".
 
-<!-- ## Preparation -->
+```{r} 
+vif(mod.a)
+```
 
-<!-- ### Loading Packages -->
+:::callout-tip
+In general, a VIF above 10 may indicate a problem of multicollinearity, but it's still up to you to determine whether dropping explanatory variable(s) is necessary depending on what story you are trying to tell with your model.
 
-<!-- ```{r} -->
-<!-- # load packages might be used in this section -->
+Unless you are having perfect/exact multicollinearity, in this case, dropping variable(s) that is perfectly collinear with your current explanatory variables becomes necessary. Most of functions in R will automatically omit these variables during estimation.
+:::
 
-<!-- library(stargazer)  # for better visualization of results -->
-<!-- library(lmtest) # statistical test for linear regression models -->
-<!-- library(car)  # for diagnostics, such as vif  -->
-<!-- library(estimatr) # for robust estimation -->
-<!-- library(effects)  # to compute marginal effects -->
-<!-- library(AER) # for IV regression  -->
+## Heteroskedasticity: Diagnostics and Solutions
 
-<!-- ``` -->
+One of the key assumptions of linear regression is that the variance of error terms are constant across all levels of the independent variables (also known as homoscedasticity). When this assumption is violated, heteroscedasticity is present in your regression. 
 
-<!-- ### Read in External Data -->
+### Breusch-Pagan Test
 
-<!-- ```{r} -->
+A formal test to detect whether heteroscedasticity is present is called the Breusch-Pagan test:
 
-<!-- # read in data -->
-<!-- setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data/ch3_data_csv") -->
-<!-- males <- read.csv(file = 'males1987_updated.csv') # make sure you are in the correct working directory   -->
-<!-- head(males) -->
+$$
+H_0:Var(\epsilon_i)=\sigma^2
+$$
+$$
+H_1:Var(\epsilon_i) \neq \sigma^2
+$$
 
-<!-- # change variable names to lowercase -->
+```{r} 
+bptest(mod.a)
+# check p-value or compare the test statistics against the critical value
+# qchisq(0.95, 6) => 12.59
+```
 
-<!-- names(males) <- tolower(names(males)) -->
-<!-- head(males, n = 5) -->
+Or you can manually estimate the following regression to see if the variance of the error term is a function of your Xs.
 
-<!-- ``` -->
+```{r} 
+summary(lm(resid(mod.a)^2 ~ school + exper + union + mar + black + hisp, 
+           data = males)
+        )
+```
 
-<!-- ## Put multiple model outputs together  -->
+### Robust Standard Errors
 
-<!-- ```{r} -->
-<!-- eq.a <- logwage ~ school + exper + union + mar + black + hisp -->
-<!-- eq.b <- logwage ~ school + exper +I(exper^2) + union + mar + black+ hisp -->
+One way to deal with heteroskedasticity is to compute heteroskedasticity-robust standard errors for results reporting, hypothesis testing, and forecasting, while keeping your OLS estimator unchanged. To calculate the heteroskedasticity-robust standard errors and use it to perform t-test on your estimators:
 
-<!-- mod.a <- lm(eq.a, data = males) -->
-<!-- mod.b <- lm(eq.b, data = males) -->
+```{r} 
+summary(mod.a) 
+coeftest(mod.a) 
 
-<!-- stargazer(mod.a, mod.b,  -->
-<!--           type = "text", -->
-<!--           digits = 3, -->
-<!--           title = "Model comparision: linear vs. quadratic", -->
-<!--           intercept.bottom=FALSE, -->
-<!--           dep.var.caption="Dependent variable: log(wage)", -->
-<!--           dep.var.labels.include = FALSE, -->
-<!--           model.numbers = FALSE, -->
-<!--           column.labels=c("Linear", "Quadatic"), -->
-<!--           no.space = TRUE -->
-<!-- ) -->
+coeftest(mod.a, vcov = hccm(mod.a, type = "hc0")) 
+coeftest(mod.a, vcov = hccm(mod.a, type = "hc3"))
+```
 
-<!-- ``` -->
+:::callout-note
+There are five options for the `type` argument in the function `hccm()` for computing the heteroscedasticity-corrected covariance matrices for inference. They are "hc0", "hc1", "hc2", "hc3" (default), and "hc4". For details regarding these 5 options, check the RDocumentation of "hccm()".
 
-<!-- ## Run OLS without the intercept -->
-
-<!-- ```{r} -->
-<!-- ## use -1 -->
-
-<!-- mod.c <- lm(logwage ~ -1 + school + exper + union + mar + black + hisp,  -->
-<!--    data = males) -->
-<!-- summary(mod.c) -->
-
-<!-- ``` -->
-
-<!-- ## Variance Inflation Factors: multicolinearity -->
-<!-- ```{r} -->
-<!-- # Automatically calculate VIF from regression output -->
-<!-- # vif > 10 may indicate a problem -->
-
-<!-- vif(mod.a) -->
-
-<!-- ``` -->
-
-
-<!-- ## Marginal effects -->
-<!-- ```{r} -->
-<!-- # Automatic effects plot using the package "effects" -->
-<!-- # library(effects) -->
-
-<!-- summary(mod.b) -->
-
-<!-- plot( effect("school", mod.a) ) -->
-<!-- plot( effect("exper", mod.b) )  -->
-
-<!-- ``` -->
-
-<!-- ## Separate estimation -->
-<!-- ```{r} -->
-<!-- # Estimate model for union =1 -->
-
-<!-- eq.c <- logwage ~ school + exper + mar + black + hisp -->
-
-<!-- mod.d <- lm(eq.c, data = males, subset=(union == 1 )) -->
-
-<!-- # Estimate model for union =0 -->
-<!-- mod.e <- lm(eq.c, data = males, subset=(union == 0 )) -->
-
-<!-- stargazer(mod.d, mod.e,  -->
-<!--           type = "text", -->
-<!--           digits = 3, -->
-<!--           title = "Union impacts", -->
-<!--           intercept.bottom=FALSE, -->
-<!--           dep.var.caption="Dependent variable: log(wage)", -->
-<!--           dep.var.labels.include = FALSE, -->
-<!--           model.numbers = FALSE, -->
-<!--           column.labels=c("Union", "Non-union"), -->
-<!--           no.space = TRUE -->
-<!-- ) -->
-
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- # Estimate model for union =0 and mar =1 -->
-<!-- mod.f <- lm(eq.a, data = males, subset=(union == 0 & mar == 1)) -->
-
-<!-- stargazer(mod.d, mod.e, mod.f, -->
-<!--           type = "text", -->
-<!--           digits = 3, -->
-<!--           title = "Union impacts", -->
-<!--           intercept.bottom=FALSE, -->
-<!--           dep.var.caption="Dependent variable: log(wage)", -->
-<!--           dep.var.labels.include = FALSE, -->
-<!--           model.numbers = FALSE, -->
-<!--           column.labels=c("Union", "Non-union", "Non-u+Mar"), -->
-<!--           no.space = TRUE -->
-<!-- ) -->
-<!-- ``` -->
-
-<!-- ## Heteroskedasticity -->
-<!-- ```{r} -->
-<!-- ## (1) Breusch-Pagan test -->
-<!-- bptest(mod.a) -->
-
-<!-- # or you can do it manually -->
-<!-- # Manual regression of squared residuals  -->
-<!-- summary(lm( resid(mod.a)^2 ~ school + exper + union + mar + black  -->
-<!--             + hisp, data = males)) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- ## (2) robust standard error -->
-
-<!-- # regression results summary -->
-<!-- summary(mod.a) -->
-
-<!-- # you can use coeftest() -->
-<!-- coeftest(mod.a) -->
-
-<!-- # hetero-robust t-test -->
-<!-- # Heteroscedasticity-Corrected Covariance Matrices: hccm -->
-<!-- # check ?hccm for the help document, hc0-hc4 -->
-
-<!-- # classic White VCOV: hc0 -->
-<!-- coeftest(mod.a, vcov = hccm(mod.a, type="hc0")) -->
-
-<!-- # refined White VCOV: hc1, hc2, and hc3; hc3 is the default option -->
-<!-- # works better if your sample size is small -->
-<!-- coeftest(mod.a, vcov = hccm(mod.a, type="hc3")) -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- ## (3) Weighted least square (WLS) regression -->
-
-<!-- # if you want to multiply the model by 1/sqrt(x), -->
-<!-- # you need to set w = 1/x -->
-
-<!-- w <- 1/males$school -->
-<!-- mod.g <- lm(eq.a, weight = w, data = males) -->
-<!-- summary(mod.g) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- stargazer(mod.a, mod.g, -->
-<!--           type = "text", -->
-<!--           digits = 3, -->
-<!--           title = "OLS vs. WLS", -->
-<!--           intercept.bottom=FALSE, -->
-<!--           dep.var.caption="Dependent variable: log(wage)", -->
-<!--           dep.var.labels.include = FALSE, -->
-<!--           model.numbers = FALSE, -->
-<!--           column.labels=c("OLS", "WLS"), -->
-<!--           no.space = TRUE -->
-<!-- ) -->
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- ## (4) you can also run regression with robust s.e. using   -->
-<!-- ## package "estimatr", function lm_robust -->
-
-<!-- mod.h <- lm_robust(eq.a, data = males, se_type = "HC3") -->
-<!-- summary(mod.h) -->
-
-<!-- # results will be the same as -->
-<!-- coeftest(mod.a, vcov = hccm(mod.a, type="hc3")) -->
-
-<!-- ``` -->
-
-
-<!-- ## Endogeneity -->
-<!-- ```{r} -->
-<!-- # read in data -->
-<!-- school <- read.csv(file = 'school.csv') -->
-<!-- head(school) -->
-
-<!-- school <- school[, c("black", "smsa76", "south76", "age76", "ed76", -->
-<!--                      "daded", "momed", "wage76")] -->
-<!-- head(school) -->
-
-<!-- # OLS  -->
-<!-- eq.wage <- log(wage76) ~ ed76 + age76 + black + smsa76 + south76 -->
-<!-- mod.e1 <- lm(eq.wage, data = school) -->
-<!-- summary(mod.e1) -->
-
-<!-- # education (ed76) might be endogenous, we want to use  -->
-<!-- # dad education as an IV -->
-
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- # (1) use IV estimator -->
-<!-- mod.iv <- ivreg(log(wage76) ~ ed76 + age76 + black + smsa76  -->
-<!--               + south76 | age76 + black + smsa76 + south76 + daded, -->
-<!--               data = school) -->
-<!-- summary(mod.iv) -->
-
-<!-- # (2) use 2sls -->
-<!-- # stage 1 -->
-<!-- mod.s1 <- lm(ed76 ~ age76 + black + smsa76 + south76 + daded, -->
-<!--              data = school) -->
-<!-- # stage 2 -->
-<!-- ed76.hat <- mod.s1$fitted.values -->
-
-<!-- mod.s2 <- lm(log(wage76) ~ ed76.hat + age76 + black +  -->
-<!--                  smsa76 + south76, data = school) -->
-<!-- summary(mod.s2) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- # (3) put the 2sls together with IV,  -->
-<!-- # coefficients are the same, and s.e. are not -->
-
-<!-- stargazer(mod.iv, mod.s2, -->
-<!--           type = "text", -->
-<!--           digits = 4, -->
-<!--           title = "IV vs. 2SLS", -->
-<!--           intercept.bottom=FALSE, -->
-<!--           dep.var.caption="Dependent variable: log(wage)", -->
-<!--           dep.var.labels.include = FALSE, -->
-<!--           model.numbers = FALSE, -->
-<!--           column.labels=c("IV", "2SLS"), -->
-<!--           no.space = TRUE -->
-<!-- ) -->
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- ## (4) multiple IVs -->
-<!-- mod.iv2 <- ivreg(log(wage76) ~ ed76 + age76 + black + smsa76  -->
-<!--                 + south76 | age76 + black + smsa76 + south76 -->
-<!--                 + daded + momed, data = school) -->
-<!-- summary(mod.iv2) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- stargazer(mod.iv, mod.iv2, mod.s2, -->
-<!--           type = "text", -->
-<!--           digits = 4, -->
-<!--           title = "IV vs. 2SLS", -->
-<!--           intercept.bottom=FALSE, -->
-<!--           dep.var.caption="Dependent variable: log(wage)", -->
-<!--           dep.var.labels.include = FALSE, -->
-<!--           model.numbers = FALSE, -->
-<!--           column.labels=c("IV","IV2", "2SLS"), -->
-<!--           no.space = TRUE -->
-<!-- ) -->
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- ## (5) specification tests -->
-
-<!-- summary(mod.iv, diagnostics = TRUE) -->
-<!-- # weak instruments test, cannot reject the null, so IV is strong -->
-<!-- # Hausman test, cannot reject the null, so no endogeneity issue -->
-
-<!-- summary(mod.iv2, diagnostics = TRUE) -->
-<!-- # weak instruments test, reject the null, so IV is strong -->
-<!-- # Hausman test, cannot reject the null, so no endogeneity issue -->
-<!-- # Sargan test, cannot reject at the 5% level, but reject at 10% -->
-<!-- # so extra IV is marginally valid -->
-<!-- ``` -->
-
+- "hc0" calculates the classic White covariance matrix. 
+
+- "hc1", "hc2", and "hc3" calculate the refined White covariance matrix. "hc3" is the default option that works better if you have a small sample size.
+
+- "hc4" is useful if you have outliers. 
+:::
+
+Alternatively, you can directly estimate the regression with heteroskedasticity-robust standard errors, using function `lm_robust()` from the package "estimatr".
+
+```{r}  
+mod.h <- lm_robust(eq.a, data = males, se_type = "HC3")
+summary(mod.h) 
+
+coeftest(mod.a, vcov = hccm(mod.a, type = "hc3"))
+```
+ 
+### Weighted Least Squares (WLS)
+
+Recall that heteroskedasticity means the variance of the error terms depends on the values of one or more explanatory variables, for example, with a multiplicative heteroskedasticity specification,
+
+$$
+Var(\epsilon_i)=\sigma_i^2=\sigma^2 h_i^2
+$$
+Then you can transform your regression to ensure homoskedasticity with the weight $\frac{1}{h_i}$, like
+
+$$
+\frac{y_i}{h_i} = \frac{x_i}{h_i}\beta + \frac{\epsilon_i}{h_i}
+$$
+
+Now, suppose our model "eq.a" exhibits heteroskedasticity such that
+
+$$
+Var(\epsilon_i)=\sigma^2 \times \text{school}_i
+$$
+
+```{r}  
+w <- 1 / males$school
+mod.g <- lm(eq.a, weight = w, data = males)
+summary(mod.g) 
+```
+
+```{r}
+stargazer(mod.a, mod.g,
+          type = "text",
+          digits = 3,
+          title = "OLS vs. WLS",
+          intercept.bottom = FALSE,
+          dep.var.caption = "Dependent variable: log(wage)",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels = c("OLS", "WLS"),
+          no.space = TRUE
+          )
+```
+
+
+## Endogeneity and Instrumental Variables
+
+### Estimation
+
+For the illustration of this section, let's load in a new dataset "school" and estimate a linear regression "mod.e1".
+
+```{r} 
+setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data")
+school <- read.csv(file = "ch5_data_csv/schooling.csv") 
+
+school <- school[, c("black", "smsa76", "south76", "age76", "ed76", "daded", "momed", "wage76")]
+head(school)
+ 
+eq.wage <- log(wage76) ~ ed76 + age76 + black + smsa76 + south76
+mod.e1 <- lm(eq.wage, data = school)
+summary(mod.e1) 
+```
+
+Since an individual's education level may be endogenous when using it to explain his/her wages, the use of Instrumental Variables (IV) can provide a solution. Let's first use "daded", dad's education, to estimate an instrumental-variable regression using `ivreg()`
+
+```{r} 
+mod.iv <- ivreg(log(wage76) ~ 
+                ed76 + age76 + black + smsa76 + south76 | 
+                       age76 + black + smsa76 + south76 + daded,
+                data = school)
+summary(mod.iv)
+```
+
+Alternatively, you can build a two-stage regression, that,
+
+- Stage 1: acquire the fitted value of the endogenous variable $X_i$, by regressing it on the instrument $Z_i$ and covariates $H_i$.
+$$
+X_i=\alpha_0+\alpha_1Z_i+\alpha_2H_i+v_i
+$$
+
+- Stage 2: regress $Y_i$ on the fitted variable ($\hat{X_i}$) and covariates $H_i$.
+$$
+Y_i=\beta_0+\beta_1\hat{X_i}+\beta_2H_i+\epsilon_i
+$$
+
+```{r}
+# stage 1
+mod.s1 <- lm(ed76 ~ age76 + black + smsa76 + south76 + daded,
+             data = school)
+# stage 2
+ed76.hat <- mod.s1$fitted.values
+mod.s2 <- lm(log(wage76) ~ ed76.hat + age76 + black + smsa76 + south76, 
+             data = school)
+summary(mod.s2) 
+```
+
+```{r}
+#| warning: false
+
+stargazer(mod.iv, mod.s2,
+          type = "text",
+          digits = 4,
+          title = "IV vs. 2SLS",
+          intercept.bottom = FALSE,
+          dep.var.caption = "Dependent variable: log(wage)",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels = c("IV", "2SLS"),
+          no.space = TRUE
+          )
+```
+
+You can also include multiple instrumental variables via
+```{r}
+mod.iv2 <- ivreg(log(wage76) ~ ed76 + age76 + black + smsa76 + south76 | 
+                                      age76 + black + smsa76 + south76 + daded + momed, 
+                 data = school)
+summary(mod.iv2)
+```
+
+```{r}
+
+stargazer(mod.iv, mod.iv2, mod.s2,
+          type = "text",
+          digits = 4,
+          title = "IV vs. 2SLS",
+          intercept.bottom = FALSE,
+          dep.var.caption = "Dependent variable: log(wage)",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels = c("IV","IV2", "2SLS"),
+          no.space = TRUE
+)
+```
+
+
+### Specification Tests
+
+Recall that, 
+$$
+Y_i=\beta_0+\beta_1X_i+\beta_2H_i+\epsilon_i
+$$
+where we suspect $X_i$ is endogenous and $Z_i$ is the instrument,
+$$
+X_i=\alpha_0 + \alpha_1Z_i+\alpha_2 H_i+v_i
+$$
+
+1. Durbin–Wu–Hausman Test: 
+
+   The test runs an auxiliary regression and tests the coefficient $\theta$ in
+   
+   $$Y_i=\beta_0+\beta_1X_i+\beta_2H_i+\theta\hat{v_i}+\epsilon_i$$
+   
+   and tests the null and alternative hypotheses:
+  
+   $H_0$: both the OLS and IV estimator are consistent $\theta = 0$ (no endogeneity issue).
+  
+   $H_1$: only the IV estimator is consistent.
+  
+2. Sargan Test: 
+
+   Sargan Test is used in the over-identified case (more instruments than the endogenous variables) to test the validity of instruments on 
+
+   $H_0$: the instruments are uncorrelated with the model's error term $Cov(Z,\epsilon)=0$ (the instrumental variables are exogenous and valid).
+  
+   $H_1$: at least one of the over-identifying restrictions is invalid.
+   
+3. Weak Instrument Test: 
+
+   Recall that, while not being directly correlated with the dependent variable, instrumental variables should be highly correlated with the endogenous variable (strong instruments). The weak instrument test tests:
+
+   $H_0$: $\alpha_1=0$ (weak instrument).
+  
+   $H_1$: $\alpha_1\neq 0$.
+  
+Utilize the `diagnostics` argument in the function `summary()`, we can perform all three specification tests.
+   
+```{r}
+diag_iv <- summary(mod.iv, diagnostics = TRUE)
+diag_iv$diagnostics 
+
+diag_iv2 <- summary(mod.iv2, diagnostics = TRUE)
+diag_iv2$diagnostics 
+```
+  
+## Exercises
+
+1. Estimate a similar regression as "eq.a" using the data "males" but **without the intercept**, report the regression results.  
+  (tip: check the RDocumentation of `lm()` to see how to estimate a model without the intercept.)
+
+2. Why does the Sargan Test report NA values for object "diag_iv"?
+
+3. Load in the data "school":
+
+   (i) Estimate the regression
+   $$
+   \log(wage76_i)=\beta_1 ed76_i + \beta_2 age76_i + \beta_3 black_i + \beta_4 smsa76_i + \beta_5south76_i + \epsilon_i
+   $$
+   
+   (ii) Suppose we suspect there's a non-linear relationship between wage and one's age, how would you change your regression?
+  
+   (iii) Check whether your model in (2) suffers from a multicollinearity or heteroskedasticity problem.
+  
+   (iv) Now perform a subsample analysis based on whether the individual was living in the South in 1976. 
 
 
