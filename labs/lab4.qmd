@@ -206,7 +206,7 @@ $$
 Now, suppose our model "eq.a" exhibits heteroskedasticity such that
 
 $$
-Var(\epsilon_i)=\sigma^2 \times \text{school}_i
+Var(\epsilon_i)=\sigma^2 \times \text{school}_i^2
 $$
 
 ```{r}  
