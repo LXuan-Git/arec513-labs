@@ -353,3 +353,83 @@ pred_data <- data.frame(male = 1, school = 18, exper = 0)
 predict(mod2, newdata = pred_data)
 
 ```
+
+## Lab 4
+
+```{r}
+#| echo: false
+#| message: false   
+
+library(stargazer)   
+library(lmtest)  
+library(car)         
+library(estimatr)  
+library(effects)    
+library(AER)
+```
+ 
+1. Estimate a similar regression as "eq.a" using the data "males" but **without the intercept**, report the regression results.  
+  (tip: check the RDocumentation of `lm()` to see how to estimate a model without the intercept.)
+```{r}
+#| warning: false
+
+setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data")
+males <- read.csv(file = "ch3_data_csv/males1987_updated.csv")
+names(males) <- tolower(names(males))
+
+eq.1 <- logwage ~ school + exper + union + mar + black + hisp - 1
+
+mod.1 <- lm(eq.1, data = males)
+summary(mod.1)
+```
+
+2. Why does the Sargan Test report NA values for object "diag_iv"?
+
+```
+Because Sargan Test is for the over-identified case, where the number of IVs is larger than the number of endogeneous variables.
+```
+
+3. Load in the data "school":
+
+```{r} 
+#| warning: false
+setwd("D:/Dropbox/Teaching/AREC513/Fall2025/materials/data")
+school <- read.csv(file = "ch5_data_csv/schooling.csv") 
+
+school <- school[, c("black", "smsa76", "south76", "age76", "ed76", "daded", "momed", "wage76")]
+```
+
+   (i) Estimate the regression
+   $$
+   \log(wage76_i)=\beta_1 ed76_i + \beta_2 age76_i + \beta_3 black_i + \beta_4 smsa76_i + \beta_5south76_i + \epsilon_i
+   $$
+```{r}
+eq.2 <- log(wage76) ~ ed76 + age76 + black + smsa76 + south76
+mod.2 <- lm(eq.2, data = school)
+summary(mod.2) 
+```
+   
+   (ii) Suppose we suspect there's a non-linear relationship between wage and one's age, how would you change your regression?
+   
+```{r}
+eq.3 <- log(wage76) ~ ed76 + age76 + I(age76 ^ 2) + black + smsa76 + south76
+mod.3 <- lm(eq.3, data = school)
+summary(mod.3) 
+```
+  
+   (iii) Check whether your model in (ii) suffers from a multicollinearity or heteroskedasticity problem.
+   
+```{r}
+vif(mod.3)     # only multicollinearity between age and age^2, but it's expected
+   
+bptest(mod.3)  # only weak evidence of heteroskedasticity at the 10% significance level
+```
+  
+   (iv) Now perform a subsample analysis based on whether the individual was living in the South in 1976. 
+```{r}
+mod.4 <- lm(eq.3, data = school, subset = (south76 == 1)) 
+mod.5 <- lm(eq.3, data = school, subset = (south76 == 0))
+   
+summary(mod.4) 
+summary(mod.5)  
+```

@@ -1,6 +1,308 @@
 ---
-title: "Lab 5: Title"
-number-sections: false 
----
+title: "Lab 5: Causal Inference (Part I)"
+author: "Feng Qiu, Liyuan Xuan"
+date: "Oct 27, 2025"
+format:
+  html:
+    toc: true
+    toc-title: "Section"
+--- 
 
-## In Construction
+The development of Lab 4 is based on Chapter 4 of the textbook *[Causal Inference: The Mixtape](https://mixtape.scunning.com/04-potential_outcomes)* by Scott Cunningham.
+
+## Preparation
+ 
+```{r}
+library(dplyr)
+
+patient_id  <- c(1 : 10)
+life_state1 <- c(7, 5, 5, 7, 4, 10, 1, 5, 3, 9) # life span in state 1 (if surgery)
+life_state0 <- c(1, 6, 1, 8, 2, 1, 10, 6, 7, 8) # life span in state 0 (if chemo) 
+```
+
+## Potential Outcomes Model
+ 
+### Observable Counterfactual
+
+```{r}
+df_ob <- data.frame(patient_id, life_state1, life_state0)
+df_ob <- df_ob %>% mutate(delta_life = life_state1 - life_state0)
+```
+
+#### Average Treatment Effect (ATE)
+
+When the counterfactual is observable, we can calculate the ATE of the treatment surgery as 
+
+$$
+ATE = E[Life_i^1] - E[Life_i^0]
+$$
+
+```{r}
+ATE <- mean(df_ob$life_state1) - mean(df_ob$life_state0)
+ATE
+```
+
+### Treatment Assignment: Perfect Doctor
+
+With a perfect doctor who assigns treatment only if patients benefit from it.
+
+```{r}
+df_ob <- df_ob %>% mutate(d_treat = ifelse(delta_life > 0, 1, 0))
+df_ob
+```
+
+#### Average Treatment Effect on the Treated (ATT)
+
+$$
+ATT = E[Life_i^1|Treat=1] - E[Life_i^0|Treat=1]
+$$
+
+```{r}
+treated_ob <- df_ob %>% filter(d_treat == 1)  
+
+ATT <- mean(treated_ob$life_state1) - mean(treated_ob$life_state0)
+ATT
+```
+
+#### Average Treatment Effect on the Untreated (ATU)
+
+$$
+ATU = E[Life_i^1|Treat=0] - E[Life_i^0|Treat=0]
+$$
+
+```{r}
+untreated_ob <- df_ob %>% filter(d_treat == 0)  
+
+ATU <- mean(untreated_ob$life_state1) - mean(untreated_ob$life_state0)
+ATU
+```
+
+### Weighted Average of ATT and ATU
+
+$$
+ATE = \pi ATT + (1 - \pi) ATU, \text{where } \pi \text{ is the share of patients who received surgery}
+$$
+
+```{r}
+pi <- nrow(treated_ob) / nrow(df_ob)
+
+w_ATT_ATU <- pi * ATT + (1 - pi) * ATU
+w_ATT_ATU
+```
+
+### Unobservable Counterfactual
+
+In the real world, we cannot observe the counterfactual, but only (1) the actual lifespan and (2) whether patients received treatment.
+
+```{r}
+treated_unob   <- treated_ob   %>% select(-life_state0, -delta_life) %>% rename(life = life_state1)
+untreated_unob <- untreated_ob %>% select(-life_state1, -delta_life) %>% rename(life = life_state0)
+
+df_unob <- rbind(treated_unob, untreated_unob)
+df_unob %>% arrange(patient_id)
+```
+
+#### Observed Difference in Means (ODM)
+
+Given that,
+
+$$
+ODM = E[Life_i^1|Treat=1] - E[Life_i^0|Treat=0]
+$$
+
+```{r}
+ODM <- mean(treated_unob$life) - mean(untreated_unob$life)
+ODM
+```
+
+#### Selection Bias
+
+When selection bias is present, $ODM$ can be rewritten as,
+
+$$
+\begin{aligned}
+ODM &= E[Life_i^1|Treat=1] - E[Life_i^0|Treat=0]\\
+    &= (E[Life_i^1|Treat=1] - E[Life_i^0|Treat=1]) + (E[Life_i^0|Treat=1] - E[Life_i^0|Treat=0])\\
+    &= ATT + \text{Selection Bias}
+\end{aligned}
+$$
+
+```{r}
+treated_state0_life   <- mean(treated_ob$life_state0)
+untreated_state0_life <- mean(untreated_ob$life_state0) 
+
+selection_bias <- treated_state0_life - untreated_state0_life
+selection_bias
+
+ATT + selection_bias
+```
+
+#### Heterogeneous Treatment Effects Bias
+
+Recall that
+
+$$
+ATE = \pi ATT + (1-\pi) ATU
+$$
+$ODM$ can also be rewritten into, when the heterogeneous treatment effects bias is present,
+ 
+$$
+\begin{aligned}
+ODM &= ATT + \text{Selection Bias}\\
+    &= ATE + \text{Selection Bias} + (1-\pi)(ATT-ATU) \\ 
+    &= ATE + \text{Selection Bias} + \text{Heterogeneous Treatment Effects Bias}
+\end{aligned}
+$$
+
+```{r}
+H_treat_bias <- (1 - pi) * (ATT - ATU)
+H_treat_bias
+
+ATE + selection_bias + H_treat_bias 
+```
+
+:::callout-note
+As shown above, in the presence of selection bias and/or heterogeneous treatment effects, the observed difference in means will not correctly capture the ATT or ATE.
+
+- Selection bias: the inherent difference between the two groups of patients if both received chemo.
+
+- Heterogeneous treatment effects: the difference in gains of the surgery between the group of patients who received surgery and the group who received chemo..
+:::
+
+### Regression and ODM
+
+In a fully saturated model, the coefficient of "d_treat" exactly equals $ODM$.
+
+```{r}
+lm(life ~ d_treat, data = df_unob)
+```
+:::callout-tip
+In this example, we are estimating the regression:
+$$
+Life_i = \alpha + \beta Treat_i + \epsilon_i
+$$
+It is called fully saturated, because the dummy "d_treat" can fully represents all the categories (or groups) in the data.
+:::
+
+## Randomized Controlled Trials
+
+### Independence Assumption
+
+To correctly estimate $ATE$ via $ODM$, the Independence Assumption (IA) has to be satisfied for the treatment, which requires
+
+$$
+(Y^1, Y^0) \perp\!\!\!\perp D
+$$
+
+With large enough sample, randomized treatment can eliminate both selection bias and heterogeneous treatment effects bias.
+
+### Data Simulation
+
+To demonstrate the claim above, we will use the same 10 observations of $Life^1$ and $Life^0$ repeatedly to generate a sample of 10/100/1,000/10,000/100,000 patients. But instead of a perfect doctor, we will randomly assign half of the patients to be "treated" each time a 10-observation sample is generated.
+
+The final sample should simulate a world where 10/100/1,000/10,000/100,000 patients are randomly assigned surgery treatment, and we can only observe $Life^1$ for those who received treatment and $Life^0$ for those who did not.
+
+```{r}
+set.seed(1)
+
+df_base <- function() {
+  data.frame(life_state1, life_state0) %>% 
+    mutate(
+      d_treat = ifelse(row_number() %in% sample(10, 5), 1, 0),
+      life = ifelse(d_treat == 1, life_state1, life_state0)
+    )  
+}
+ 
+df_sim10 <- bind_rows(replicate(1, df_base(), simplify = FALSE))
+df_sim100 <- bind_rows(replicate(10, df_base(), simplify = FALSE))
+df_sim1000 <- bind_rows(replicate(100, df_base(), simplify = FALSE))
+df_sim10000 <- bind_rows(replicate(1000, df_base(), simplify = FALSE))
+df_sim100000 <- bind_rows(replicate(10000, df_base(), simplify = FALSE)) 
+```
+
+### Calculate ODM
+
+```{r}
+ODM1 <- mean(df_sim10$life_state1[df_sim10$d_treat == 1]) - mean(df_sim10$life_state0[df_sim10$d_treat == 0])
+ODM2 <- mean(df_sim100$life_state1[df_sim100$d_treat == 1]) - mean(df_sim100$life_state0[df_sim100$d_treat == 0])
+ODM3 <- mean(df_sim1000$life_state1[df_sim1000$d_treat == 1]) - mean(df_sim1000$life_state0[df_sim1000$d_treat == 0])
+ODM4 <- mean(df_sim10000$life_state1[df_sim10000$d_treat == 1]) - mean(df_sim10000$life_state0[df_sim10000$d_treat == 0])
+ODM5 <- mean(df_sim100000$life_state1[df_sim100000$d_treat == 1]) - mean(df_sim100000$life_state0[df_sim100000$d_treat == 0])
+
+ODMs <- c(ODM1, ODM2, ODM3, ODM4, ODM5)
+names(ODMs) <- c("times1", "times10", "times100", "times1000", "times10000")
+ODMs
+```
+### Regression
+
+```{r}
+lm1 <- lm(life ~ d_treat, data = df_sim10)
+lm2 <- lm(life ~ d_treat, data = df_sim100)
+lm3 <- lm(life ~ d_treat, data = df_sim1000)
+lm4 <- lm(life ~ d_treat, data = df_sim10000)
+lm5 <- lm(life ~ d_treat, data = df_sim100000) 
+
+library(stargazer)
+stargazer(lm1, lm2, lm3, lm4, lm5,
+          omit.stat = c("f", "ser", "rsq", "adj.rsq"),
+          type = "text", 
+          omit = "Constant", 
+          star.cutoffs = NA,
+          digits = 2, 
+          intercept.bottom = TRUE,
+          dep.var.caption = "Lifespan",
+          dep.var.labels.include = FALSE,
+          model.numbers = FALSE,
+          column.labels = c("times1", "times10", "times100", "times1000", "times10000"),
+          no.space = TRUE,
+          font.size = "footnotesize" 
+          )
+```
+
+```{r}
+sim_times <- factor(c("times1", "times10", "times100", "times1000", "times10000"),
+                      levels = c("times1", "times10", "times100", "times1000", "times10000")) 
+coefs <- c(lm1$coefficients[2], lm2$coefficients[2], lm3$coefficients[2], lm4$coefficients[2], lm5$coefficients[2])
+
+models <- data.frame(sim_times, coefs) 
+
+library(ggplot2)
+
+ggplot(models, aes(x = sim_times, y = coefs, group = 1)) +
+  geom_point(size = 2) +
+  geom_line(linewidth = 1) +
+  geom_hline(yintercept = 0.6, linetype = "longdash", color = "red") +
+  theme_minimal()
+```
+
+Overall, we observe that with (1) random treatment and (2) large sample, the ODM converges to the true ATE.
+
+## Exercise
+
+Use the following dataset on 10 farmers that:
+
+- a potential profit $profit^1$ is realized if the new technology is adopted, otherwise $profit^0$
+
+- the counterfactual is observable
+
+Answer Question 1 and 2.
+
+```{r}
+farmer_id <- 1 : 10
+profit_state1 <- c(120, 90, 90, 150, 80, 160, 60, 95, 100, 75)    # adoption of the technology
+profit_state0 <- c(100, 95, 85, 110, 90, 100, 70, 90, 80, 100)    # no adoption
+```
+ 
+1. Suppose the farmers will only adopt the technology if it is profitable, generate the dummy variable "d_adopt".
+
+2. Calculate $ATE$, $ATT$, $ATU$, and show that $ATE$ is the weighted average of the other two terms.
+
+Now, imagine a more realistic situation where the counterfactual is not observable, and only the realized profits and whether the farms adopted the technology can be observed. 
+
+Create this new data frame and answer Question 3 through 5.
+
+3. Calculate the $ODM$ and verify that the regression results correspond to it.
+
+4. Calculate the selection bias and the heterogeneous treatment effects bias.
+
+5. Simulate a sample of 10,000 observations by repeatedly using the same 10 observations on the farmers, with only 6 out of 10 farmers adopt the technology randomly each time. Show that when estimating a regression, the coefficient of "d_adopt" approaches the true ATE.

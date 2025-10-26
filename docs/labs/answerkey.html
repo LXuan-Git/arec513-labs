@@ -4967,6 +4967,7 @@ window.Quarto = {
   </ul></li>
   </ul></li>
   <li><a href="#lab-3" id="toc-lab-3" class="nav-link" data-scroll-target="#lab-3">Lab 3</a></li>
+  <li><a href="#lab-4" id="toc-lab-4" class="nav-link" data-scroll-target="#lab-4">Lab 4</a></li>
   </ul>
 </nav>
 </nav>
@@ -5641,6 +5642,205 @@ male 1.167208 1.52153</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>       1 
 9.462709 </code></pre>
+</div>
+</div>
+</section>
+<section id="lab-4" class="level2">
+<h2 class="anchored" data-anchor-id="lab-4">Lab 4</h2>
+<ol type="1">
+<li>Estimate a similar regression as “eq.a” using the data “males” but <strong>without the intercept</strong>, report the regression results.<br>
+(tip: check the RDocumentation of <code>lm()</code> to see how to estimate a model without the intercept.)</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;D:/Dropbox/Teaching/AREC513/Fall2025/materials/data&quot;</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>males <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="at">file =</span> <span class="st">&quot;ch3_data_csv/males1987_updated.csv&quot;</span>)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(males) <span class="ot">&lt;-</span> <span class="fu">tolower</span>(<span class="fu">names</span>(males))</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>eq<span class="fl">.1</span> <span class="ot">&lt;-</span> logwage <span class="sc">~</span> school <span class="sc">+</span> exper <span class="sc">+</span> union <span class="sc">+</span> mar <span class="sc">+</span> black <span class="sc">+</span> hisp <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>mod<span class="fl">.1</span> <span class="ot">&lt;-</span> <span class="fu">lm</span>(eq<span class="fl">.1</span>, <span class="at">data =</span> males)</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = eq.1, data = males)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-1.6834 -0.2728  0.0358  0.2678  1.5954 
+
+Coefficients:
+        Estimate Std. Error t value Pr(&gt;|t|)    
+school  0.123460   0.005917  20.864  &lt; 2e-16 ***
+exper   0.033279   0.007086   4.697 3.36e-06 ***
+union   0.123321   0.043204   2.854  0.00448 ** 
+mar     0.093421   0.039145   2.387  0.01735 *  
+black  -0.198351   0.061437  -3.229  0.00132 ** 
+hisp    0.062343   0.052948   1.177  0.23954    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.4347 on 539 degrees of freedom
+Multiple R-squared:  0.9495,    Adjusted R-squared:  0.9489 
+F-statistic:  1689 on 6 and 539 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<ol start="2" type="1">
+<li>Why does the Sargan Test report NA values for object “diag_iv”?</li>
+</ol>
+<pre><code>Because Sargan Test is for the over-identified case, where the number of IVs is larger than the number of endogeneous variables.</code></pre>
+<ol start="3" type="1">
+<li>Load in the data “school”:</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;D:/Dropbox/Teaching/AREC513/Fall2025/materials/data&quot;</span>)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>school <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="at">file =</span> <span class="st">&quot;ch5_data_csv/schooling.csv&quot;</span>) </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>school <span class="ot">&lt;-</span> school[, <span class="fu">c</span>(<span class="st">&quot;black&quot;</span>, <span class="st">&quot;smsa76&quot;</span>, <span class="st">&quot;south76&quot;</span>, <span class="st">&quot;age76&quot;</span>, <span class="st">&quot;ed76&quot;</span>, <span class="st">&quot;daded&quot;</span>, <span class="st">&quot;momed&quot;</span>, <span class="st">&quot;wage76&quot;</span>)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ol type="i">
+<li>Estimate the regression <span class="math display">\[
+   \log(wage76_i)=\beta_1 ed76_i + \beta_2 age76_i + \beta_3 black_i + \beta_4 smsa76_i + \beta_5south76_i + \epsilon_i
+   \]</span></li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>eq<span class="fl">.2</span> <span class="ot">&lt;-</span> <span class="fu">log</span>(wage76) <span class="sc">~</span> ed76 <span class="sc">+</span> age76 <span class="sc">+</span> black <span class="sc">+</span> smsa76 <span class="sc">+</span> south76</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>mod<span class="fl">.2</span> <span class="ot">&lt;-</span> <span class="fu">lm</span>(eq<span class="fl">.2</span>, <span class="at">data =</span> school)</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod<span class="fl">.2</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = eq.2, data = school)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.69292 -0.23227  0.02205  0.24880  1.31507 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  4.677451   0.073952  63.250   &lt;2e-16 ***
+ed76         0.034494   0.002726  12.655   &lt;2e-16 ***
+age76        0.039313   0.002196  17.906   &lt;2e-16 ***
+black       -0.188223   0.017768 -10.593   &lt;2e-16 ***
+smsa76       0.164741   0.015692  10.499   &lt;2e-16 ***
+south76     -0.129053   0.015229  -8.474   &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.3772 on 3004 degrees of freedom
+Multiple R-squared:  0.2788,    Adjusted R-squared:  0.2776 
+F-statistic: 232.2 on 5 and 3004 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<ol start="2" type="i">
+<li>Suppose we suspect there’s a non-linear relationship between wage and one’s age, how would you change your regression?</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>eq<span class="fl">.3</span> <span class="ot">&lt;-</span> <span class="fu">log</span>(wage76) <span class="sc">~</span> ed76 <span class="sc">+</span> age76 <span class="sc">+</span> <span class="fu">I</span>(age76 <span class="sc">^</span> <span class="dv">2</span>) <span class="sc">+</span> black <span class="sc">+</span> smsa76 <span class="sc">+</span> south76</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>mod<span class="fl">.3</span> <span class="ot">&lt;-</span> <span class="fu">lm</span>(eq<span class="fl">.3</span>, <span class="at">data =</span> school)</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod<span class="fl">.3</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = eq.3, data = school)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.68461 -0.22782  0.02229  0.24473  1.31572 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  3.1906426  0.6437037   4.957 7.57e-07 ***
+ed76         0.0340887  0.0027293  12.490  &lt; 2e-16 ***
+age76        0.1443718  0.0452368   3.191  0.00143 ** 
+I(age76^2)  -0.0018257  0.0007852  -2.325  0.02013 *  
+black       -0.1887294  0.0177561 -10.629  &lt; 2e-16 ***
+smsa76       0.1647065  0.0156804  10.504  &lt; 2e-16 ***
+south76     -0.1298909  0.0152216  -8.533  &lt; 2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.3769 on 3003 degrees of freedom
+Multiple R-squared:  0.2801,    Adjusted R-squared:  0.2786 
+F-statistic: 194.7 on 6 and 3003 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<ol start="3" type="i">
+<li>Check whether your model in (ii) suffers from a multicollinearity or heteroskedasticity problem.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vif</span>(mod<span class="fl">.3</span>)     <span class="co"># only multicollinearity between age and age^2, but it&#39;s expected</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      ed76      age76 I(age76^2)      black     smsa76    south76 
+  1.130491 426.483614 426.561721   1.195627   1.065995   1.181576 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bptest</span>(mod<span class="fl">.3</span>)  <span class="co"># only weak evidence of heteroskedasticity at the 10% significance level</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    studentized Breusch-Pagan test
+
+data:  mod.3
+BP = 11.472, df = 6, p-value = 0.07485</code></pre>
+</div>
+</div>
+<ol start="4" type="i">
+<li>Now perform a subsample analysis based on whether the individual was living in the South in 1976.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>mod<span class="fl">.4</span> <span class="ot">&lt;-</span> <span class="fu">lm</span>(eq<span class="fl">.3</span>, <span class="at">data =</span> school, <span class="at">subset =</span> (south76 <span class="sc">==</span> <span class="dv">1</span>)) </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>mod<span class="fl">.5</span> <span class="ot">&lt;-</span> <span class="fu">lm</span>(eq<span class="fl">.3</span>, <span class="at">data =</span> school, <span class="at">subset =</span> (south76 <span class="sc">==</span> <span class="dv">0</span>))</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod<span class="fl">.4</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = eq.3, data = school, subset = (south76 == 1))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.48674 -0.24041  0.01241  0.24680  1.24075 
+
+Coefficients: (1 not defined because of singularities)
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  2.303898   1.013844   2.272  0.02324 *  
+ed76         0.045673   0.004003  11.409  &lt; 2e-16 ***
+age76        0.195891   0.071402   2.743  0.00617 ** 
+I(age76^2)  -0.002848   0.001242  -2.292  0.02205 *  
+black       -0.221192   0.022527  -9.819  &lt; 2e-16 ***
+smsa76       0.153436   0.022413   6.846 1.21e-11 ***
+south76            NA         NA      NA       NA    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.3701 on 1209 degrees of freedom
+Multiple R-squared:  0.2937,    Adjusted R-squared:  0.2908 
+F-statistic: 100.6 on 5 and 1209 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod<span class="fl">.5</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = eq.3, data = school, subset = (south76 == 0))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-1.6222 -0.2120  0.0238  0.2443  1.3487 
+
+Coefficients: (1 not defined because of singularities)
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  3.408174   0.828753   4.112 4.09e-05 ***
+ed76         0.023167   0.003706   6.251 5.09e-10 ***
+age76        0.133929   0.058210   2.301   0.0215 *  
+I(age76^2)  -0.001546   0.001009  -1.532   0.1256    
+black       -0.121206   0.028877  -4.197 2.83e-05 ***
+smsa76       0.156545   0.022096   7.085 1.99e-12 ***
+south76            NA         NA      NA       NA    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.3778 on 1789 degrees of freedom
+Multiple R-squared:  0.1775,    Adjusted R-squared:  0.1752 
+F-statistic: 77.21 on 5 and 1789 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
 </div>
 
