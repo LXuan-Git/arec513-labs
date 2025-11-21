@@ -4968,6 +4968,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#lab-3" id="toc-lab-3" class="nav-link" data-scroll-target="#lab-3">Lab 3</a></li>
   <li><a href="#lab-4" id="toc-lab-4" class="nav-link" data-scroll-target="#lab-4">Lab 4</a></li>
+  <li><a href="#lab-5" id="toc-lab-5" class="nav-link" data-scroll-target="#lab-5">Lab 5</a></li>
   </ul>
 </nav>
 </nav>
@@ -5841,6 +5842,134 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 Residual standard error: 0.3778 on 1789 degrees of freedom
 Multiple R-squared:  0.1775,    Adjusted R-squared:  0.1752 
 F-statistic: 77.21 on 5 and 1789 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+</section>
+<section id="lab-5" class="level2">
+<h2 class="anchored" data-anchor-id="lab-5">Lab 5</h2>
+<p>Use the following dataset on 10 farmers that:</p>
+<ul>
+<li><p>a potential profit <span class="math inline">\(profit^1\)</span> is realized if the new technology is adopted, otherwise <span class="math inline">\(profit^0\)</span></p></li>
+<li><p>the counterfactual is observable</p></li>
+</ul>
+<p>Answer Question 1 and 2.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>farmer_id <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">:</span> <span class="dv">10</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>profit_state1 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">120</span>, <span class="dv">90</span>, <span class="dv">90</span>, <span class="dv">150</span>, <span class="dv">80</span>, <span class="dv">160</span>, <span class="dv">60</span>, <span class="dv">95</span>, <span class="dv">100</span>, <span class="dv">75</span>)    <span class="co"># adoption of the technology</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>profit_state0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">95</span>, <span class="dv">85</span>, <span class="dv">110</span>, <span class="dv">90</span>, <span class="dv">100</span>, <span class="dv">70</span>, <span class="dv">90</span>, <span class="dv">80</span>, <span class="dv">100</span>)    <span class="co"># no adoption</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ol type="1">
+<li>Suppose the farmers will only adopt the technology if it is profitable, generate the dummy variable “d_adopt”.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>df_farm <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(farmer_id, profit_state1, profit_state0)</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>df_farm <span class="ot">&lt;-</span> df_farm <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">d_adopt =</span> <span class="fu">ifelse</span>(profit_state1 <span class="sc">&gt;</span> profit_state0, <span class="dv">1</span>, <span class="dv">0</span>)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ol start="2" type="1">
+<li>Calculate <span class="math inline">\(ATE\)</span>, <span class="math inline">\(ATT\)</span>, <span class="math inline">\(ATU\)</span>, and show that <span class="math inline">\(ATE\)</span> is the weighted average of the other two terms.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>ATE <span class="ot">&lt;-</span> <span class="fu">mean</span>(df_farm<span class="sc">$</span>profit_state1) <span class="sc">-</span> <span class="fu">mean</span>(df_farm<span class="sc">$</span>profit_state0)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>treated_farm <span class="ot">&lt;-</span> df_farm <span class="sc">%&gt;%</span> <span class="fu">filter</span>(d_adopt <span class="sc">==</span> <span class="dv">1</span>)  </span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>ATT <span class="ot">&lt;-</span> <span class="fu">mean</span>(treated_farm<span class="sc">$</span>profit_state1) <span class="sc">-</span> <span class="fu">mean</span>(treated_farm<span class="sc">$</span>profit_state0)</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>untreated_farm <span class="ot">&lt;-</span> df_farm <span class="sc">%&gt;%</span> <span class="fu">filter</span>(d_adopt <span class="sc">==</span> <span class="dv">0</span>)  </span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>ATU <span class="ot">&lt;-</span> <span class="fu">mean</span>(untreated_farm<span class="sc">$</span>profit_state1) <span class="sc">-</span> <span class="fu">mean</span>(untreated_farm<span class="sc">$</span>profit_state0)</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">ATE =</span> ATE, <span class="at">ATT =</span> ATT, <span class="at">ATU =</span> ATU)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ATE   ATT   ATU 
+ 10.0  25.0 -12.5 </code></pre>
+</div>
+</div>
+<p>Now, imagine a more realistic situation where the counterfactual is not observable, and only the realized profits and whether the farms adopted the technology can be observed.</p>
+<p>Create this new data frame and answer Question 3 through 5.</p>
+<ol start="3" type="1">
+<li>Calculate the <span class="math inline">\(ODM\)</span> and verify that the regression results correspond to it.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>ODM <span class="ot">&lt;-</span> <span class="fu">mean</span>(df_farm<span class="sc">$</span>profit_state1[df_farm<span class="sc">$</span>d_adopt <span class="sc">==</span> <span class="dv">1</span>]) <span class="sc">-</span> <span class="fu">mean</span>(df_farm<span class="sc">$</span>profit_state0[df_farm<span class="sc">$</span>d_adopt <span class="sc">==</span> <span class="dv">0</span>])</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>ODM</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 30.41667</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>df_farm <span class="ot">&lt;-</span> df_farm <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">profit_obs =</span> <span class="fu">ifelse</span>(d_adopt <span class="sc">==</span> <span class="dv">1</span>, profit_state1, profit_state0))</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>reg_farm <span class="ot">&lt;-</span> <span class="fu">lm</span>(profit_obs <span class="sc">~</span> d_adopt, <span class="at">data =</span> df_farm)</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(reg_farm) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = profit_obs ~ d_adopt, data = df_farm)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-29.167 -19.062   1.042  10.000  40.833 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)    88.75      12.42   7.143 9.77e-05 ***
+d_adopt        30.42      16.04   1.896   0.0945 .  
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 24.85 on 8 degrees of freedom
+Multiple R-squared:  0.3101,    Adjusted R-squared:  0.2239 
+F-statistic: 3.596 on 1 and 8 DF,  p-value: 0.0945</code></pre>
+</div>
+</div>
+<ol start="4" type="1">
+<li>Calculate the selection bias and the heterogeneous treatment effects bias.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>treated_state0_profit   <span class="ot">&lt;-</span> <span class="fu">mean</span>(treated_farm<span class="sc">$</span>profit_state0)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>untreated_state0_profit <span class="ot">&lt;-</span> <span class="fu">mean</span>(untreated_farm<span class="sc">$</span>profit_state0) </span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>selection_bias <span class="ot">&lt;-</span> treated_state0_profit <span class="sc">-</span> untreated_state0_profit</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>selection_bias</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5.416667</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ATT + selection_bias == ODM =&gt; TRUE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ol start="5" type="1">
+<li>Simulate a sample of 10,000 observations by repeatedly using the same 10 observations on the farmers, with only 6 out of 10 farmers adopt the technology randomly each time. Show that when estimating a regression, the coefficient of “d_adopt” approaches the true ATE.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>df_base <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(profit_state1, profit_state0) <span class="sc">%&gt;%</span> </span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">d_adopt =</span> <span class="fu">ifelse</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="dv">10</span>, <span class="dv">6</span>), <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">profit_obs =</span> <span class="fu">ifelse</span>(d_adopt <span class="sc">==</span> <span class="dv">1</span>, profit_state1, profit_state0)</span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>    )  </span>
+<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a>df_sim10000 <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(<span class="fu">replicate</span>(<span class="dv">1000</span>, <span class="fu">df_base</span>(), <span class="at">simplify =</span> <span class="cn">FALSE</span>))</span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>reg_sim <span class="ot">&lt;-</span> <span class="fu">lm</span>(profit_obs <span class="sc">~</span> d_adopt, <span class="at">data =</span> df_sim10000)</span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(reg_sim) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = profit_obs ~ d_adopt, data = df_sim10000)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-42.304 -12.304  -2.304   8.072  57.696 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  91.9275     0.3930  233.94   &lt;2e-16 ***
+d_adopt      10.3767     0.5073   20.45   &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 24.85 on 9998 degrees of freedom
+Multiple R-squared:  0.04017,   Adjusted R-squared:  0.04007 
+F-statistic: 418.4 on 1 and 9998 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
 </div>
 

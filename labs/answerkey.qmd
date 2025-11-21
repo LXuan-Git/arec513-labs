@@ -433,3 +433,89 @@ mod.5 <- lm(eq.3, data = school, subset = (south76 == 0))
 summary(mod.4) 
 summary(mod.5)  
 ```
+ 
+## Lab 5
+
+Use the following dataset on 10 farmers that:
+
+- a potential profit $profit^1$ is realized if the new technology is adopted, otherwise $profit^0$
+
+- the counterfactual is observable
+
+Answer Question 1 and 2.
+
+```{r}
+farmer_id <- 1 : 10
+profit_state1 <- c(120, 90, 90, 150, 80, 160, 60, 95, 100, 75)    # adoption of the technology
+profit_state0 <- c(100, 95, 85, 110, 90, 100, 70, 90, 80, 100)    # no adoption
+```
+ 
+1. Suppose the farmers will only adopt the technology if it is profitable, generate the dummy variable "d_adopt".
+
+```{r}
+df_farm <- data.frame(farmer_id, profit_state1, profit_state0)
+df_farm <- df_farm %>% mutate(d_adopt = ifelse(profit_state1 > profit_state0, 1, 0)) 
+```
+
+2. Calculate $ATE$, $ATT$, $ATU$, and show that $ATE$ is the weighted average of the other two terms.
+
+```{r} 
+ATE <- mean(df_farm$profit_state1) - mean(df_farm$profit_state0)
+
+treated_farm <- df_farm %>% filter(d_adopt == 1)  
+ATT <- mean(treated_farm$profit_state1) - mean(treated_farm$profit_state0)
+
+untreated_farm <- df_farm %>% filter(d_adopt == 0)  
+ATU <- mean(untreated_farm$profit_state1) - mean(untreated_farm$profit_state0)
+
+c(ATE = ATE, ATT = ATT, ATU = ATU)
+```
+
+Now, imagine a more realistic situation where the counterfactual is not observable, and only the realized profits and whether the farms adopted the technology can be observed. 
+
+Create this new data frame and answer Question 3 through 5.
+
+3. Calculate the $ODM$ and verify that the regression results correspond to it.
+
+```{r}
+ODM <- mean(df_farm$profit_state1[df_farm$d_adopt == 1]) - mean(df_farm$profit_state0[df_farm$d_adopt == 0])
+ODM
+
+df_farm <- df_farm %>% mutate(profit_obs = ifelse(d_adopt == 1, profit_state1, profit_state0))
+
+reg_farm <- lm(profit_obs ~ d_adopt, data = df_farm)
+summary(reg_farm) 
+```
+
+4. Calculate the selection bias and the heterogeneous treatment effects bias.
+
+```{r}
+
+treated_state0_profit   <- mean(treated_farm$profit_state0)
+untreated_state0_profit <- mean(untreated_farm$profit_state0) 
+
+selection_bias <- treated_state0_profit - untreated_state0_profit
+selection_bias
+
+# ATT + selection_bias == ODM => TRUE
+```
+
+5. Simulate a sample of 10,000 observations by repeatedly using the same 10 observations on the farmers, with only 6 out of 10 farmers adopt the technology randomly each time. Show that when estimating a regression, the coefficient of "d_adopt" approaches the true ATE.
+
+```{r}
+set.seed(1)
+
+df_base <- function() {
+  data.frame(profit_state1, profit_state0) %>% 
+    mutate(
+      d_adopt = ifelse(row_number() %in% sample(10, 6), 1, 0),
+      profit_obs = ifelse(d_adopt == 1, profit_state1, profit_state0)
+    )  
+}
+
+df_sim10000 <- bind_rows(replicate(1000, df_base(), simplify = FALSE))
+
+reg_sim <- lm(profit_obs ~ d_adopt, data = df_sim10000)
+summary(reg_sim) 
+```
+

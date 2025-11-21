@@ -1,6 +1,520 @@
 ---
-title: "Lab 6: Title"
-number-sections: false 
----
+title: "Lab 6: Causal Inference (Part II)"
+author: "Feng Qiu, Liyuan Xuan"
+date: "Nov 24, 2025"
+format:
+  html:
+    toc: true
+    toc-title: "Section"
+--- 
 
-## In Construction
+The development of Lab 6 is based on Chapter 5, 6 and 9 of the textbook *[Causal Inference: The Mixtape](https://mixtape.scunning.com/05-matching_and_subclassification)* by Scott Cunningham.
+
+## Preparation
+
+```{r}
+#| message: false
+#| warning: false
+
+options(scipen = 9999) # turn off scientific notation
+
+library(dplyr)  
+
+# package for RDD
+library(ggplot2)
+library(rdrobust)
+library(rddensity)
+
+# package for DiD and event study
+library(fixest)
+```
+
+## Matching and Subclassification
+ 
+### Data Generation
+
+For this section, we will first generate a sample dataset of 1,000 students, such that:
+
+- Students are categorized into three performance groups: "High", "Medium", and "Low".
+
+- Treatment "scholarship" is randomly assigned at a constant probability to students of the same performance groups.
+
+- Scholarship adds a constant 10 points for everyone to exam scores.
+
+Then, given prior knowledge on how "scholarship" is assigned, we will explain how subclassification and matching can approximate the ATE and ATT.
+
+```{r}
+set.seed(100) 
+ 
+performance <- sample(
+  c("Low", "Medium", "High"),
+  size    = 1000,
+  replace = TRUE,
+  prob    = c(0.3, 0.4, 0.3)  # distribution of the performance
+)
+
+df_matching <- data.frame(performance)
+
+df_matching <- df_matching %>% mutate(
+   p_scholarship = case_when(
+      performance == "Low"    ~ 0.10,
+      performance == "Medium" ~ 0.30,
+      performance == "High"   ~ 0.60  # higher performance has larger probability to receive scholarship
+    ),
+   scholarship = rbinom(1000, 1, p_scholarship)
+)
+ 
+u <- rnorm(1000, 0, 5) # noise
+ 
+df_matching <- df_matching %>% mutate(
+  score0 = case_when(
+    performance == "Low"    ~ 60 + 10 * (-1) + u,
+    performance == "Medium" ~ 60 + 10 * (0) + u,
+    performance == "High"   ~ 60 + 10 * (1) + u,
+  ),
+  score1 = score0 + 10,
+  score_ob = ifelse(scholarship == 1, score1, score0)
+)
+ 
+true_ATE <- mean(df_matching$score1 - df_matching$score0)
+true_ATE
+
+true_ATT <- mean(df_matching$score1[df_matching$scholarship == 1] - df_matching$score0[df_matching$scholarship == 1])
+true_ATT
+
+summary(df_matching)
+table(df_matching$performance, df_matching$scholarship)
+```
+ 
+### Conditional Independence Assumption
+
+Recall that, the Independence Assumption assumes perfect randomization in treatment assignment, which is rare in the real world. Instead, we can relax the assumption to have treatment being randomly assigned among individuals sharing similar characteristics, such as "performance".
+
+$$
+(Y^1, Y^0) \perp\!\!\!\perp D|X
+$$
+
+### Subclassification
+
+```{r}
+subclass <- df_matching %>% group_by(performance) %>% summarise(
+  N = n(),
+  N1 = sum(scholarship),
+  N0 = N - N1,
+  EY_1 = mean(score_ob[scholarship == 1]),
+  EY_0 = mean(score_ob[scholarship == 0]),
+  delta_x = EY_1 - EY_0 
+  ) %>% 
+  ungroup()
+
+subclass <- subclass %>% mutate(
+  prop = N / sum(N),
+  prop.treat = N1 / sum(N1)
+)
+subclass 
+
+ATE_sub <- sum(subclass$delta_x * subclass$prop)
+ATE_sub
+
+ATT_sub <- sum(subclass$delta_x * subclass$prop.treat)
+ATT_sub
+```
+
+### Regression with Controls on "performance"
+
+Regression estimates can approximate the "true" treatment effects if we control "performance".
+
+```{r}
+lm_noX   <- lm(score_ob ~ scholarship, data = df_matching)
+lm_withX <- lm(score_ob ~ scholarship + performance, data = df_matching)
+
+summary(lm_noX)
+summary(lm_withX) 
+```
+ 
+### Exact Matching
+
+#### Calculate Manually
+
+Recall that, with multiple matched units, the formulas for calculating ATT and ATE are:
+
+$$
+\hat{\delta}_{ATT}=\frac{1}{N_T}\sum_{D_i=1}(Y_i-[\frac{1}{M}\sum_{m=1}^MY_{jm(1)}])
+$$
+$$
+\hat{\delta}_{ATE}=\frac{1}{N}\sum_{i=1}^{N}(2D_i-1)(Y_i-[\frac{1}{M}\sum_{m=1}^MY_{jm(i)}])
+$$
+
+```{r} 
+match_exact_manual <- df_matching %>% group_by(performance) %>% mutate(
+  mean_treat = mean(score_ob[scholarship == 1]),
+  mean_control = mean(score_ob[scholarship == 0]),
+  
+  mean_match = ifelse(scholarship == 1, mean_control, mean_treat), # since we have multiple units matched per unit
+
+  diff_ATT = ifelse(scholarship == 1, score_ob - mean_match, NA),
+  diff_ATE = (2 * scholarship - 1) * (score_ob - mean_match)
+  ) %>% 
+  ungroup()
+
+ATT_exact_manual <- mean(match_exact_manual$diff_ATT, na.rm = T)  
+ATE_exact_manual <- mean(match_exact_manual$diff_ATE)  
+
+c(ATT_manual = ATT_exact_manual, ATE_manual = ATE_exact_manual)
+```
+ 
+:::callout-note
+Since we have prior knowledge on how the treatment "scholarship" is assigned conditionally based on the discrete "performance", when performing exact matching, we would have the same results as subclassification.
+::: 
+   
+  
+## Regression Discontinuity Design (RDD)
+ 
+### Data Generation
+
+For this section, we will also work on a simulated data specified below, highlighting a school financial assistance program distributing assistance to students achieving a test score above 120. Before we generate a more "realistic" scenario on how the program would improve students' earnings after graduation, we will use the earnings in absence of treatment for illustration.
+
+```{r}
+set.seed(100) 
+
+df_rdd <- data.frame(score = rnorm(1000, 100, 50)) %>% mutate(score = ifelse(score < 0, 0, score)) %>%
+  filter(score <= 240)
+
+u <- rnorm(nrow(df_rdd), 0, 1000) # noise
+ 
+df_rdd <- df_rdd %>% 
+  mutate(
+    D  = ifelse(score > 120, 1, 0), # policy cutoff at score = 120
+    score2 = score * score,
+    earn0 = 10000 + 0 * D - 100 * score + score2 + u,
+      
+    score_center = score - 120,
+    score_center2 = score_center * score_center
+  )
+```
+  
+### Estimation
+
+#### Global Least Squares Regressions
+
+##### Linear Regression
+ 
+We begin with estimating a linear regression below, 
+   
+$$
+Earn_i = \alpha + \delta D_i + \beta_{1} \tilde{Score_i} + \gamma_{1}(D_i * \tilde{Score_i}) + \epsilon_i, \text{where } \tilde{Score_i} = Score_i - 120
+$$
+
+Left of cutoff ($D_i=0$):
+
+- $\text{intercept}=\alpha$
+
+- $\text{slope}=\beta$
+
+Right of cutoff ($D_i=1$):
+
+- $\text{intercept}=\alpha + \tau$
+
+- $\text{slope}=\beta + \gamma$
+
+Therefore, the coefficient of $D_i$, $\tau$, should capture the treatment effect. This is the "jump" at the cutoff score, since $(\alpha + \tau) - \alpha = \tau$
+
+```{r}
+rdd_linear <- lm(earn0 ~ D + score_center + D:score_center, data = df_rdd)
+summary(rdd_linear)
+
+
+ggplot(df_rdd, aes(x = score, y = earn0, color = factor(D))) + geom_point(alpha = 0.25, size = 0.9) +
+  geom_smooth(data = df_rdd %>% filter(score <= 120), method = "lm", formula = y ~ x, se = FALSE) +
+  geom_smooth(data = df_rdd %>% filter(score > 120),  method = "lm", formula = y ~ x, se = FALSE) +
+  geom_vline(xintercept = 120, linetype = "dashed") +
+  labs(x = "Test score", y = "Earnings_0", color = "Treatment") 
+
+```
+
+##### Polynomial Regression
+
+Because the "true" data-generating process is nonlinear, a global linear regression will incorrectly produce a treatment effect even when the true effect is zero. As a result, polynomial terms are often added to the regression. 
+
+$$
+Earn_i = \alpha + \delta D_i + \beta_{1} \tilde{Score_i} + \gamma_{1}(D_i * \tilde{Score_i}) + \beta_{2} \tilde{Score_i}^2 + \gamma_{2}(D_i * \tilde{Score_i}^2) + \epsilon_i
+$$
+
+```{r}
+#| message: false
+#| warning: false
+
+rdd_poly <- lm(earn0 ~ D + score_center + D:score_center + score_center2 + D:score_center2, data = df_rdd)
+summary(rdd_poly)
+
+
+ggplot(df_rdd, aes(x = score, y = earn0, color = factor(D))) + geom_point(alpha = 0.25, size = 0.9) +
+  geom_smooth(data = df_rdd %>% filter(score <= 120), method = "loess", se = FALSE) +
+  geom_smooth(data = df_rdd %>% filter(score > 120),  method = "loess", se = FALSE) +
+  geom_vline(xintercept = 120, linetype = "dashed") +
+  labs(x = "Test score", y = "Earnings_0", color = "Treatment") 
+```
+  
+##### Assigning "True" Treatment Effect
+
+Knowing the "true" treatment effect is  +5,000 and the data generation process is non-linear, we estimate the following polynomial regression.
+
+```{r}
+df_rdd <- df_rdd %>% 
+  mutate(
+    earn1 = earn0 + 5000,
+    earn_ob = ifelse(D == 1, earn1, earn0),
+    score_center3 = score_center * score_center * score_center
+  )
+
+rdd_ploy_ob <- lm(earn_ob ~ D + score_center + D:score_center + score_center2 + D:score_center2, data = df_rdd)
+summary(rdd_ploy_ob)
+```
+
+#### Local Least Squares Regressions (Nonparametric Kernels)
+
+The recent papers suggest to estimate local linear nonparametric regressions with kernel method. A user-written package "rdrobust" implement estimation
+
+```{r}
+rdr <- rdrobust(y = df_rdd$earn_ob, x = df_rdd$score, c = 120)
+summary(rdr)
+```
+
+:::callout-note
+The package also provides a way to visualize your data. Try `rdplot(y = df_rdd$earn_ob, x = df_rdd$score, c = 120)`.
+:::
+
+### Diagnoses and Tests
+
+#### Continuity Assumption
+
+Our simulated data allows us to check if the continuity assumption holds in the absence of treatment.
+
+```{r}
+#| message: false
+
+ggplot(aes(score, earn0, colour = factor(D)), data = df_rdd) +
+    geom_point(alpha = 0.25, size = 0.9) + geom_vline(xintercept = 120, linetype = "dashed") +
+    geom_smooth(data = df_rdd %>% filter(score <= 120), method = "loess", se = FALSE) +
+    geom_smooth(data = df_rdd %>% filter(score > 120),  method = "loess", se = FALSE) +
+    labs(x = "Test score", y = "Earnings_0", color = "Treatment") 
+```
+
+#### McCreary’s Density Test
+
+The McCreary density test is used to test if the density of running variable is continous at cutoff.
+
+```{r}
+density <- rddensity(df_rdd$score, c = 120) 
+density_plot <- rdplotdensity(density, df_rdd$score)
+```
+
+#### Placebo Tests
+
+Placebo tests can be used to check whether there is a treatment ‘effect’ away from the true cutoff.
+ 
+```{r}
+rdr_placebo <- rdrobust(y = df_rdd$earn_ob, x = df_rdd$score, c = 100)
+summary(rdr_placebo)
+```
+ 
+## Difference-in-Differences (DiD)
+ 
+### Data Generation
+
+To show the DiD estimator could correctly capture the treatment effect, we again use the simulated data. We propose a scenario for two provinces A and B between the years 2000 and 2020. Given that unemployment rates is relatively higher in province A, it decides to implement a job-training program in 2010 to assist local workers. As designed, the true treatment effect of such program on unemployment rates in province A is -2. 
+
+```{r} 
+set.seed(100)
+
+years <- 2000:2020
+provinces <- c("A", "B")
+
+df_did <- expand.grid(year = years, province = provinces)
+
+df_did <- df_did %>%
+  mutate(
+    unemp_base = ifelse(province == "A", 13, 10),
+    trend = -0.1 * (year - 2000),
+    unemp_0 = unemp_base + trend + rnorm(n(), 0, 0.05),
+    
+    jt_effect = ifelse(province == "A" & year >= 2010, -2, 0),
+    unemp_ob = unemp_0 + jt_effect
+  )
+```
+
+
+### Simple DiD
+
+#### Set Up
+
+In a typical simple 2x2 DiD setup, we usually begin by generating two dummy variables "treat" (for the treatment group) and "post" (for the post-treatment period), then their interaction term.
+
+```{r}
+df_did <- df_did %>% mutate(
+  post = ifelse(year >= 2010, 1, 0),
+  treat = ifelse(province == "A", 1, 0),
+  post_treat = post * treat
+)
+```
+
+#### Calculating the DiD Estimator
+
+The difference in difference estimator calculate the differences as below:
+
+$$
+\hat{\delta}^{2\times 2}_{kU} = (E[Y_k|\text{Post}] - E[Y_k|\text{Pre}]) - (E[Y_U|\text{Post}] - E[Y_U|\text{Pre}])
+$$
+
+```{r}
+
+difference_A <- mean(df_did$unemp_ob[df_did$post == 1 & df_did$treat == 1]) - 
+                mean(df_did$unemp_ob[df_did$post == 0 & df_did$treat == 1]) 
+ 
+difference_B <- mean(df_did$unemp_ob[df_did$post == 1 & df_did$treat == 0]) - 
+                mean(df_did$unemp_ob[df_did$post == 0 & df_did$treat == 0])
+
+diff_in_diff <- difference_A - difference_B
+diff_in_diff
+```
+
+#### Non-parallel Trends Bias
+
+The key assumption that allows the DiD estimator to identify the ATT is the assumption of parallel trend. Conveniently, in our simulated data, we know such assumption would hold.
+
+$$
+\begin{aligned}
+\hat{\delta}^{2\times 2}_{kU} &= \Big( E[Y_k^1|\text{Post}] - E[Y_k^0|\text{Post}] \Big) + 
+\bigg[ 
+\Big( E[Y_k^0|\text{Post}] - E[Y_k^0|\text{Pre}] \Big) - \Big( E[Y_U^0|\text{Post}] - E[Y_U^0|\text{Pre}] \Big)
+\bigg] \\
+&= \text{ATT} + \text{Non-parallel bias in 2x2 case}
+\end{aligned}
+$$
+   
+```{r}
+NP_bias_term1 <- mean(df_did$unemp_0[df_did$post == 1 & df_did$treat == 1]) - 
+                 mean(df_did$unemp_0[df_did$post == 0 & df_did$treat == 1]) 
+
+NP_bias_term2 <- mean(df_did$unemp_0[df_did$post == 1 & df_did$treat == 0]) - 
+                 mean(df_did$unemp_0[df_did$post == 0 & df_did$treat == 0])
+
+NP_bias <- NP_bias_term1 - NP_bias_term2
+NP_bias
+
+ggplot(df_did) +
+  geom_line(aes(x = year, y = unemp_ob, color = province), linewidth = 1.2) +
+  geom_line(data = filter(df_did, province == "A" & year >= 2009), aes(x = year, y = unemp_0), linetype = "longdash", linewidth = 1, color = "grey70") + 
+  geom_vline(xintercept = 2010) +
+  labs( 
+    x = "Year",
+    y = "Unemployment Rate (%)",
+    color = "Province"
+  ) +
+  theme_minimal()
+```
+#### Regression
+
+We can also utilize the dummy variables "treat" and "post" to estimate the DiD estimator via the regression below.
+
+$$
+\text{unemp}_{it} = \alpha + \beta\text{Treat}_i+\gamma\text{Post}_t + \delta\bigg( \text{Post}_t \times \text{Treat}_i \bigg) + \epsilon_{it}
+$$
+
+```{r}
+did_simple <- lm(unemp_ob ~ treat + post + post_treat, data = df_did)
+summary(did_simple)
+```
+
+### Event Study
+
+#### Expanding the Dataset
+
+Now, we expand the data to include 4 cities in the provinces A and B. Again, the job training program is implemented in province A in 2010.
+
+```{r}
+set.seed(100)
+ 
+cities <- c("a", "b", "c", "d")
+
+df_did2 <- expand.grid(year = years, city = cities)
+
+df_did2 <- df_did2 %>%
+  mutate(
+    unemp_base = case_when(city == "a" ~ 13, city == "b" ~ 11, city == "c" ~ 10, city == "d" ~ 7),
+    trend = -0.1 * (year - 2000),
+    unemp_0 = unemp_base + trend + rnorm(n(), 0, 0.05),
+    province = ifelse(city == "a" | city == "b", "A", "B"),
+    
+    jt_effect = ifelse(province == "A" & year >= 2010, -2, 0),
+    unemp_ob = unemp_0 + jt_effect
+  )
+```
+
+#### Estimation
+
+For event study, we are estimating the regression below:
+
+$$
+\text{unemp}_{it} = \sum_{j=-10}^{-2}\beta_j \bigg( \text{Treat}_i * \text{Before}_t \bigg) + \sum_{k=0}^{10}\beta_k \bigg( \text{Treat}_i * \text{After}_t \bigg) + \text{city}_{i} + \text{year}_t + \epsilon_{it}
+$$
+
+- $\text{Treat}_i$ is the dummy variable that equals 1 for cities "a" or "b".
+
+- $\text{Before}_t$ is the dummy variable that equals 1 for each year before 2010 (the treatment year).
+
+- $\text{After}_t$ is the dummy variable that equals 1 for each year after 2010 (the treatment year).
+
+- $\text{city}_{i}$ and $\text{year}_t$ are the fixed effects on cities and years.
+
+```{r}
+df_did2 <- df_did2 %>%
+    mutate( 
+        treat = ifelse(province == "A", 1, 0),
+        event_time = year - 2010  
+    )
+
+event_study <- feols(unemp_ob ~ i(event_time, treat, ref = -1) | city + year, data = df_did2)  
+summary(event_study)
+
+# for visualization
+ 
+event_study_plot <- data.frame(
+  sd = c(event_study$coeftable$`Std. Error`),
+  coef = c(event_study$coeftable$`Estimate`),
+  label = c(-10, -9, -8, -7, -6, -5, -4, -3, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+)
+ 
+ggplot(data = event_study_plot, 
+       aes(x = label, y = coef, ymin = coef - 1.96 * sd, ymax = coef + 1.96 * sd)) + 
+  geom_pointrange() + 
+  labs(x = "Event Time", y = "Unemployment Rate (%)") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") + 
+  theme_minimal() 
+```
+  
+## Exercise
+
+### Matching and Subclassification
+
+Suppose the rating of "performance" (High/Medium/Low) is derived from a comprehensive index ranging between 0 and 100, explain in reality (having no prior knowledge on the data generation process) why we may have the "Curse of Dimensionality" problem. 
+
+### Regression Discontinuity Design (RDD)
+
+1. Use the linear regression as the example to explain why we need to center $Score_i$ first to identify $\delta$ as the treatment effect. 
+
+2. Estimate a similar polynomial regression but include the term with order 3?
+
+3. To show robustness, perform multiple placebo tests at other alternative cutoffs.
+ 
+### Difference-in-Differences (DiD)
+
+1. Use the results of the DiD regression ("did_simple"), calculate the average pre-treatment and post-treatment unemployment for province A and province B.
+
+2. Perform a placebo test for the results "did_simple" using 2008 as the "treatment year".
+
+3. Use the expanded dataset "df_did2" to estimate a DiD regression. 
+
+4. In the visualization for results of the event study ("event_study), is the parallel assumption satisfied?
+ 

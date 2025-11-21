@@ -8,7 +8,7 @@ format:
     toc-title: "Section"
 --- 
 
-The development of Lab 4 is based on Chapter 4 of the textbook *[Causal Inference: The Mixtape](https://mixtape.scunning.com/04-potential_outcomes)* by Scott Cunningham.
+The development of Lab 5 is based on Chapter 4 of the textbook *[Causal Inference: The Mixtape](https://mixtape.scunning.com/04-potential_outcomes)* by Scott Cunningham.
 
 ## Preparation
  
@@ -44,7 +44,7 @@ ATE
 
 ### Treatment Assignment: Perfect Doctor
 
-With a perfect doctor who assigns treatment only if patients benefit from it.
+With a perfect doctor who assigns treatment only if patients benefit from it:
 
 ```{r}
 df_ob <- df_ob %>% mutate(d_treat = ifelse(delta_life > 0, 1, 0))
@@ -166,7 +166,7 @@ As shown above, in the presence of selection bias and/or heterogeneous treatment
 
 - Selection bias: the inherent difference between the two groups of patients if both received chemo.
 
-- Heterogeneous treatment effects: the difference in gains of the surgery between the group of patients who received surgery and the group who received chemo..
+- Heterogeneous treatment effects: the difference in gains of the surgery between the group of patients who received surgery and the group who received chemo.
 :::
 
 ### Regression and ODM

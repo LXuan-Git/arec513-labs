@@ -5024,7 +5024,7 @@ window.Quarto = {
 </header>
 
 
-<p>The development of Lab 4 is based on Chapter 4 of the textbook <em><a href="https://mixtape.scunning.com/04-potential_outcomes">Causal Inference: The Mixtape</a></em> by Scott Cunningham.</p>
+<p>The development of Lab 5 is based on Chapter 4 of the textbook <em><a href="https://mixtape.scunning.com/04-potential_outcomes">Causal Inference: The Mixtape</a></em> by Scott Cunningham.</p>
 <section id="preparation" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="preparation"><span class="header-section-number">1</span> Preparation</h2>
 <div class="cell">
@@ -5060,7 +5060,7 @@ ATE = E[Life_i^1] - E[Life_i^0]
 </section>
 <section id="treatment-assignment-perfect-doctor" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="treatment-assignment-perfect-doctor"><span class="header-section-number">2.2</span> Treatment Assignment: Perfect Doctor</h3>
-<p>With a perfect doctor who assigns treatment only if patients benefit from it.</p>
+<p>With a perfect doctor who assigns treatment only if patients benefit from it:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df_ob <span class="ot">&lt;-</span> df_ob <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">d_treat =</span> <span class="fu">ifelse</span>(delta_life <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>df_ob</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -5349,7 +5349,7 @@ Note
 <p>As shown above, in the presence of selection bias and/or heterogeneous treatment effects, the observed difference in means will not correctly capture the ATT or ATE.</p>
 <ul>
 <li><p>Selection bias: the inherent difference between the two groups of patients if both received chemo.</p></li>
-<li><p>Heterogeneous treatment effects: the difference in gains of the surgery between the group of patients who received surgery and the group who received chemo..</p></li>
+<li><p>Heterogeneous treatment effects: the difference in gains of the surgery between the group of patients who received surgery and the group who received chemo.</p></li>
 </ul>
 </div>
 </div>
