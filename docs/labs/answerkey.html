@@ -4969,6 +4969,10 @@ window.Quarto = {
   <li><a href="#lab-3" id="toc-lab-3" class="nav-link" data-scroll-target="#lab-3">Lab 3</a></li>
   <li><a href="#lab-4" id="toc-lab-4" class="nav-link" data-scroll-target="#lab-4">Lab 4</a></li>
   <li><a href="#lab-5" id="toc-lab-5" class="nav-link" data-scroll-target="#lab-5">Lab 5</a></li>
+  <li><a href="#lab-6" id="toc-lab-6" class="nav-link" data-scroll-target="#lab-6">Lab 6</a></li>
+  <li><a href="#matching-and-subclassification" id="toc-matching-and-subclassification" class="nav-link" data-scroll-target="#matching-and-subclassification">Matching and Subclassification</a></li>
+  <li><a href="#regression-discontinuity-design-rdd" id="toc-regression-discontinuity-design-rdd" class="nav-link" data-scroll-target="#regression-discontinuity-design-rdd">Regression Discontinuity Design (RDD)</a></li>
+  <li><a href="#difference-in-differences-did" id="toc-difference-in-differences-did" class="nav-link" data-scroll-target="#difference-in-differences-did">Difference-in-Differences (DiD)</a></li>
   </ul>
 </nav>
 </nav>
@@ -5972,6 +5976,218 @@ Multiple R-squared:  0.04017,   Adjusted R-squared:  0.04007
 F-statistic: 418.4 on 1 and 9998 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
 </div>
+</section>
+<section id="lab-6" class="level2">
+<h2 class="anchored" data-anchor-id="lab-6">Lab 6</h2>
+</section>
+<section id="matching-and-subclassification" class="level2">
+<h2 class="anchored" data-anchor-id="matching-and-subclassification">Matching and Subclassification</h2>
+<p>Suppose the rating of “performance” (High/Medium/Low) is derived from a comprehensive index ranging between 0 and 100, explain in reality (having no prior knowledge on the data generation process) why we may have the “Curse of Dimensionality” problem.</p>
+<p>When performance is measured on a 0–100 continuous scale, exact matching becomes nearly impossible. If we discretize the variable into small bins (e.g., width of 5 or 10), some bins may contain no observations or only controls or only treated units. The problem would become worse once additional covariates are included.</p>
+</section>
+<section id="regression-discontinuity-design-rdd" class="level2">
+<h2 class="anchored" data-anchor-id="regression-discontinuity-design-rdd">Regression Discontinuity Design (RDD)</h2>
+<ol type="1">
+<li>Use the linear regression as the example to explain why we need to center <span class="math inline">\(Score_i\)</span> first to identify <span class="math inline">\(\delta\)</span> as the treatment effect.</li>
+</ol>
+<p>Recall that, the linear regression estimates <span class="math display">\[
+Earn_i = \alpha + \delta D_i + \beta_{1} \tilde{Score_i} + \gamma_{1}(D_i * \tilde{Score_i}) + \epsilon_i, \text{where } \tilde{Score_i} = Score_i - 120
+\]</span></p>
+<p>At cutoff, the centered <span class="math inline">\(Score_i\)</span> equals 0,</p>
+<ul>
+<li><p>At the left limit (untreated): <span class="math display">\[
+\lim_{\tilde{Score_i} \rightarrow 0}E[Earn_i^0|\tilde{Score_i}=0] = \alpha
+\]</span></p></li>
+<li><p>At the right limit (treated): <span class="math display">\[
+\lim_{\tilde{Score_i} \leftarrow 0}E[Earn_i^1 | \tilde{Score_i} = 0] = \alpha + \delta
+\]</span></p></li>
+</ul>
+<p>Hence, it makes <span class="math inline">\(\delta\)</span>, the coefficient of <span class="math inline">\(D_i\)</span>, capturing the treatment effect, as <span class="math display">\[
+\delta = E[Earn_i^1 - Earn_i^0 | \tilde{Score_i}=0]
+\]</span></p>
+<ol start="2" type="1">
+<li>Estimate a similar polynomial regression but include the term with order 3?</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>rdd_poly3 <span class="ot">&lt;-</span> <span class="fu">lm</span>(earn_ob <span class="sc">~</span> D <span class="sc">+</span> </span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>                  score_center  <span class="sc">+</span> D<span class="sc">:</span>score_center  <span class="sc">+</span> </span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>                  score_center2 <span class="sc">+</span> D<span class="sc">:</span>score_center2 <span class="sc">+</span> </span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>                  score_center3 <span class="sc">+</span> D<span class="sc">:</span>score_center3,</span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> df_rdd)</span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(rdd_poly3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = earn_ob ~ D + score_center + D:score_center + score_center2 + 
+    D:score_center2 + score_center3 + D:score_center3, data = df_rdd)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2962.0  -691.7    18.4   610.9  3181.5 
+
+Coefficients:
+                     Estimate    Std. Error t value             Pr(&gt;|t|)    
+(Intercept)     12530.2912921   134.1557869  93.401 &lt; 0.0000000000000002 ***
+D                4883.4629562   200.0340799  24.413 &lt; 0.0000000000000002 ***
+score_center      148.5425113    10.0843189  14.730 &lt; 0.0000000000000002 ***
+score_center2       1.1168209     0.2017829   5.535         0.0000000399 ***
+score_center3       0.0004816     0.0011127   0.433                0.665    
+D:score_center     -5.8215290    17.1772171  -0.339                0.735    
+D:score_center2    -0.1218169     0.3912767  -0.311                0.756    
+D:score_center3    -0.0008144     0.0024499  -0.332                0.740    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 983 on 989 degrees of freedom
+Multiple R-squared:  0.9855,    Adjusted R-squared:  0.9854 
+F-statistic:  9622 on 7 and 989 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+<ol start="3" type="1">
+<li>To show robustness, perform multiple placebo tests at other alternative cutoffs.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>rdr_1 <span class="ot">&lt;-</span> <span class="fu">rdrobust</span>(<span class="at">y =</span> df_rdd<span class="sc">$</span>earn_ob, <span class="at">x =</span> df_rdd<span class="sc">$</span>score, <span class="at">c =</span> <span class="dv">90</span>) </span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>rdr_2 <span class="ot">&lt;-</span> <span class="fu">rdrobust</span>(<span class="at">y =</span> df_rdd<span class="sc">$</span>earn_ob, <span class="at">x =</span> df_rdd<span class="sc">$</span>score, <span class="at">c =</span> <span class="dv">150</span>)</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>coef <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">cutoff_90  =</span> rdr_1<span class="sc">$</span>coef[<span class="dv">1</span>], <span class="at">cutoff_150 =</span> rdr_2<span class="sc">$</span>coef[<span class="dv">1</span>])</span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>p_value <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">cutoff_90  =</span> rdr_1<span class="sc">$</span>pv[<span class="dv">1</span>], <span class="at">cutoff_150 =</span> rdr_2<span class="sc">$</span>pv[<span class="dv">1</span>])</span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">coef =</span> coef, <span class="at">p_value =</span> p_value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">coef</th>
+<th style="text-align: right;">p_value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">cutoff_90</td>
+<td style="text-align: right;">-90.25435</td>
+<td style="text-align: right;">0.7714155</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">cutoff_150</td>
+<td style="text-align: right;">385.81255</td>
+<td style="text-align: right;">0.3320370</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<section id="difference-in-differences-did" class="level2">
+<h2 class="anchored" data-anchor-id="difference-in-differences-did">Difference-in-Differences (DiD)</h2>
+<ol type="1">
+<li>Use the results of the DiD regression (“did_simple”), calculate the average pre-treatment and post-treatment unemployment for province A and province B.</li>
+</ol>
+<p>Recall the estimated regression, <span class="math display">\[
+\text{unemp}_{it} = \alpha + \beta\text{Treat}_i+\gamma\text{Post}_t + \delta\bigg( \text{Post}_t \times \text{Treat}_i \bigg) + \epsilon_{it}
+\]</span></p>
+<ul>
+<li><p>For province B (<span class="math inline">\(\text{Treat}_i = 0\)</span>) and pre-treatment (<span class="math inline">\(\text{Post}_t = 0\)</span>): <span class="math inline">\(\text{unemp}_{B,pre} = \alpha\)</span></p></li>
+<li><p>For province B (<span class="math inline">\(\text{Treat}_i = 0\)</span>) and post-treatment (<span class="math inline">\(\text{Post}_t = 1\)</span>): <span class="math inline">\(\text{unemp}_{B,post} = \alpha + \gamma\)</span></p></li>
+<li><p>For province A (<span class="math inline">\(\text{Treat}_i = 1\)</span>) and pre-treatment (<span class="math inline">\(\text{Post}_t = 0\)</span>): <span class="math inline">\(\text{unemp}_{A,pre} = \alpha + \beta\)</span></p></li>
+<li><p>For province A (<span class="math inline">\(\text{Treat}_i = 1\)</span>) and post-treatment (<span class="math inline">\(\text{Post}_t = 1\)</span>): <span class="math inline">\(\text{unemp}_{A,post} = \alpha + \beta + \gamma + \delta\)</span></p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> did_simple<span class="sc">$</span>coefficients[<span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>beta  <span class="ot">&lt;-</span> did_simple<span class="sc">$</span>coefficients[<span class="st">&quot;treat&quot;</span>]</span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>gamma <span class="ot">&lt;-</span> did_simple<span class="sc">$</span>coefficients[<span class="st">&quot;post&quot;</span>]</span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>delta <span class="ot">&lt;-</span> did_simple<span class="sc">$</span>coefficients[<span class="st">&quot;post_treat&quot;</span>]</span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>B_pre  <span class="ot">&lt;-</span> alpha</span>
+<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>B_post <span class="ot">&lt;-</span> alpha <span class="sc">+</span> gamma</span>
+<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>A_pre  <span class="ot">&lt;-</span> alpha <span class="sc">+</span> beta</span>
+<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a>A_post <span class="ot">&lt;-</span> alpha <span class="sc">+</span> beta <span class="sc">+</span> gamma <span class="sc">+</span> delta</span>
+<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-11"><a href="#cb72-11" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">B_pre =</span> <span class="fu">unname</span>(B_pre), <span class="at">B_post =</span> <span class="fu">unname</span>(B_post), <span class="at">A_pre =</span> <span class="fu">unname</span>(A_pre), <span class="at">A_post =</span> <span class="fu">unname</span>(A_post))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    B_pre    B_post     A_pre    A_post 
+ 9.536492  8.483455 12.533848  9.477670 </code></pre>
+</div>
+</div>
+<ol start="2" type="1">
+<li>Perform a placebo test for the results “did_simple” using 2008 as the “treatment year”.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>df_did <span class="ot">&lt;-</span> df_did <span class="sc">%&gt;%</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">post_placebo =</span> <span class="fu">ifelse</span>(year <span class="sc">&gt;=</span> <span class="dv">2008</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">post_treat_placebo =</span> post_placebo <span class="sc">*</span> treat</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>did_placebo_2008 <span class="ot">&lt;-</span> <span class="fu">lm</span>(unemp_ob <span class="sc">~</span> treat <span class="sc">+</span> post_placebo <span class="sc">+</span> post_treat_placebo, <span class="at">data =</span> df_did)</span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(did_placebo_2008)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = unemp_ob ~ treat + post_placebo + post_treat_placebo, 
+    data = df_did)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.86707 -0.33782 -0.06266  0.17577  2.24853 
+
+Coefficients:
+                   Estimate Std. Error t value             Pr(&gt;|t|)    
+(Intercept)          9.6355     0.2277  42.310 &lt; 0.0000000000000002 ***
+treat                3.0012     0.3221   9.318      0.0000000000234 ***
+post_placebo        -1.0510     0.2894  -3.631             0.000830 ***
+post_treat_placebo  -1.7011     0.4093  -4.156             0.000177 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.6441 on 38 degrees of freedom
+Multiple R-squared:  0.8401,    Adjusted R-squared:  0.8275 
+F-statistic: 66.54 on 3 and 38 DF,  p-value: 0.000000000000003454</code></pre>
+</div>
+</div>
+<ol start="3" type="1">
+<li>Use the expanded dataset “df_did2” to estimate a DiD regression.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>df_did2 <span class="ot">&lt;-</span> df_did2 <span class="sc">%&gt;%</span></span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">post =</span> <span class="fu">ifelse</span>(year <span class="sc">&gt;=</span> <span class="dv">2010</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">treat =</span> <span class="fu">ifelse</span>(province <span class="sc">==</span> <span class="st">&quot;A&quot;</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">post_treat =</span> post <span class="sc">*</span> treat</span>
+<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>did2_simple <span class="ot">&lt;-</span> <span class="fu">lm</span>(unemp_ob <span class="sc">~</span> treat <span class="sc">+</span> post <span class="sc">+</span> post_treat, <span class="at">data =</span> df_did2)</span>
+<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(did2_simple)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = unemp_ob ~ treat + post + post_treat, data = df_did2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.00958 -1.29064 -0.02026  1.25469  1.99415 
+
+Coefficients:
+            Estimate Std. Error t value             Pr(&gt;|t|)    
+(Intercept)   8.0579     0.3014  26.731 &lt; 0.0000000000000002 ***
+treat         3.4711     0.4263   8.142     0.00000000000425 ***
+post         -1.0494     0.4165  -2.519              0.01374 *  
+post_treat   -1.9812     0.5890  -3.364              0.00118 ** 
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 1.348 on 80 degrees of freedom
+Multiple R-squared:  0.6149,    Adjusted R-squared:  0.6004 
+F-statistic: 42.57 on 3 and 80 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+<ol start="4" type="1">
+<li>In the visualization for results of the event study (“event_study”), is the parallel trends assumption satisfied?</li>
+</ol>
+<p>Yes. given that the pre-treatment coefficients are around zero and statistically insignificant, the pattern supports the validity of the parallel trends assumption.</p>
 
 
 </section>

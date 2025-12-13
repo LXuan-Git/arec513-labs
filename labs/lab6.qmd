@@ -167,6 +167,11 @@ c(ATT_manual = ATT_exact_manual, ATE_manual = ATE_exact_manual)
 Since we have prior knowledge on how the treatment "scholarship" is assigned conditionally based on the discrete "performance", when performing exact matching, we would have the same results as subclassification.
 ::: 
    
+#### Regression
+
+```{r} 
+lm(score_ob ~ scholarship + performance, data = df_matching) 
+```
   
 ## Regression Discontinuity Design (RDD)
  
@@ -516,5 +521,5 @@ Suppose the rating of "performance" (High/Medium/Low) is derived from a comprehe
 
 3. Use the expanded dataset "df_did2" to estimate a DiD regression. 
 
-4. In the visualization for results of the event study ("event_study), is the parallel assumption satisfied?
+4. In the visualization for results of the event study ("event_study"), is the parallel trends assumption satisfied?
  

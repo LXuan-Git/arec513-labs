@@ -519,3 +519,213 @@ reg_sim <- lm(profit_obs ~ d_adopt, data = df_sim10000)
 summary(reg_sim) 
 ```
 
+
+## Lab 6
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+options(scipen = 9999) # turn off scientific notation
+
+library(dplyr)  
+
+# package for RDD
+library(ggplot2)
+library(rdrobust)
+library(rddensity)
+
+# package for DiD and event study
+library(fixest)
+
+## preparation
+
+set.seed(100) 
+
+### RDD
+
+df_rdd <- data.frame(score = rnorm(1000, 100, 50)) %>% mutate(score = ifelse(score < 0, 0, score)) %>%
+  filter(score <= 240)
+
+u <- rnorm(nrow(df_rdd), 0, 1000) # noise
+ 
+df_rdd <- df_rdd %>% 
+  mutate(
+    D  = ifelse(score > 120, 1, 0), # policy cutoff at score = 120
+    score2 = score * score,
+    earn0 = 10000 + 0 * D - 100 * score + score2 + u,
+      
+    score_center = score - 120,
+    score_center2 = score_center * score_center
+  )
+
+df_rdd <- df_rdd %>% 
+  mutate(
+    earn1 = earn0 + 5000,
+    earn_ob = ifelse(D == 1, earn1, earn0),
+    score_center3 = score_center * score_center * score_center
+  )
+
+### DiD
+
+years <- 2000:2020
+provinces <- c("A", "B")
+
+df_did <- expand.grid(year = years, province = provinces)
+
+df_did <- df_did %>%
+  mutate(
+    unemp_base = ifelse(province == "A", 13, 10),
+    trend = -0.1 * (year - 2000),
+    unemp_0 = unemp_base + trend + rnorm(n(), 0, 0.05),
+    
+    jt_effect = ifelse(province == "A" & year >= 2010, -2, 0),
+    unemp_ob = unemp_0 + jt_effect
+  )
+
+df_did <- df_did %>% mutate(
+  post = ifelse(year >= 2010, 1, 0),
+  treat = ifelse(province == "A", 1, 0),
+  post_treat = post * treat
+)
+did_simple <- lm(unemp_ob ~ treat + post + post_treat, data = df_did)
+
+cities <- c("a", "b", "c", "d")
+
+df_did2 <- expand.grid(year = years, city = cities)
+
+df_did2 <- df_did2 %>%
+  mutate(
+    unemp_base = case_when(city == "a" ~ 13, city == "b" ~ 11, city == "c" ~ 10, city == "d" ~ 7),
+    trend = -0.1 * (year - 2000),
+    unemp_0 = unemp_base + trend + rnorm(n(), 0, 0.05),
+    province = ifelse(city == "a" | city == "b", "A", "B"),
+    
+    jt_effect = ifelse(province == "A" & year >= 2010, -2, 0),
+    unemp_ob = unemp_0 + jt_effect
+  )
+```
+
+## Matching and Subclassification
+
+Suppose the rating of "performance" (High/Medium/Low) is derived from a comprehensive index ranging between 0 and 100, explain in reality (having no prior knowledge on the data generation process) why we may have the "Curse of Dimensionality" problem. 
+
+When performance is measured on a 0–100 continuous scale, exact matching becomes nearly impossible. If we discretize the variable into small bins (e.g., width of 5 or 10), some bins may contain no observations or only controls or only treated units. The problem would become worse once additional covariates are included.
+ 
+## Regression Discontinuity Design (RDD)
+
+1. Use the linear regression as the example to explain why we need to center $Score_i$ first to identify $\delta$ as the treatment effect. 
+
+Recall that, the linear regression estimates
+$$
+Earn_i = \alpha + \delta D_i + \beta_{1} \tilde{Score_i} + \gamma_{1}(D_i * \tilde{Score_i}) + \epsilon_i, \text{where } \tilde{Score_i} = Score_i - 120
+$$
+
+At cutoff, the centered $Score_i$ equals 0,
+
+- At the left limit (untreated):
+$$
+\lim_{\tilde{Score_i} \rightarrow 0}E[Earn_i^0|\tilde{Score_i}=0] = \alpha
+$$
+
+- At the right limit (treated):
+$$
+\lim_{\tilde{Score_i} \leftarrow 0}E[Earn_i^1 | \tilde{Score_i} = 0] = \alpha + \delta
+$$
+
+Hence, it makes $\delta$, the coefficient of $D_i$, capturing the treatment effect, as
+$$
+\delta = E[Earn_i^1 - Earn_i^0 | \tilde{Score_i}=0] 
+$$
+
+2. Estimate a similar polynomial regression but include the term with order 3?
+
+```{r}
+rdd_poly3 <- lm(earn_ob ~ D + 
+                  score_center  + D:score_center  + 
+                  score_center2 + D:score_center2 + 
+                  score_center3 + D:score_center3,
+                data = df_rdd)
+summary(rdd_poly3)
+
+```
+
+3. To show robustness, perform multiple placebo tests at other alternative cutoffs.
+
+```{r}
+rdr_1 <- rdrobust(y = df_rdd$earn_ob, x = df_rdd$score, c = 90) 
+rdr_2 <- rdrobust(y = df_rdd$earn_ob, x = df_rdd$score, c = 150)
+
+coef <- c(cutoff_90  = rdr_1$coef[1], cutoff_150 = rdr_2$coef[1])
+p_value <- c(cutoff_90  = rdr_1$pv[1], cutoff_150 = rdr_2$pv[1])
+
+data.frame(coef = coef, p_value = p_value)
+```
+ 
+## Difference-in-Differences (DiD)
+
+1. Use the results of the DiD regression ("did_simple"), calculate the average pre-treatment and post-treatment unemployment for province A and province B.
+
+Recall the estimated regression,
+$$
+\text{unemp}_{it} = \alpha + \beta\text{Treat}_i+\gamma\text{Post}_t + \delta\bigg( \text{Post}_t \times \text{Treat}_i \bigg) + \epsilon_{it}
+$$
+
+- For province B ($\text{Treat}_i = 0$) and pre-treatment ($\text{Post}_t = 0$):
+$\text{unemp}_{B,pre} = \alpha$
+
+- For province B ($\text{Treat}_i = 0$) and post-treatment ($\text{Post}_t = 1$):
+$\text{unemp}_{B,post} = \alpha + \gamma$
+
+- For province A ($\text{Treat}_i = 1$) and pre-treatment ($\text{Post}_t = 0$):
+$\text{unemp}_{A,pre} = \alpha + \beta$
+
+- For province A ($\text{Treat}_i = 1$) and post-treatment ($\text{Post}_t = 1$):
+$\text{unemp}_{A,post} = \alpha + \beta + \gamma + \delta$
+
+```{r}
+alpha <- did_simple$coefficients["(Intercept)"]
+beta  <- did_simple$coefficients["treat"]
+gamma <- did_simple$coefficients["post"]
+delta <- did_simple$coefficients["post_treat"]
+
+B_pre  <- alpha
+B_post <- alpha + gamma
+A_pre  <- alpha + beta
+A_post <- alpha + beta + gamma + delta
+
+c(B_pre = unname(B_pre), B_post = unname(B_post), A_pre = unname(A_pre), A_post = unname(A_post))
+```
+
+2. Perform a placebo test for the results "did_simple" using 2008 as the "treatment year".
+
+```{r}
+df_did <- df_did %>%
+  mutate(
+    post_placebo = ifelse(year >= 2008, 1, 0),
+    post_treat_placebo = post_placebo * treat
+  )
+
+did_placebo_2008 <- lm(unemp_ob ~ treat + post_placebo + post_treat_placebo, data = df_did)
+summary(did_placebo_2008)
+```
+
+3. Use the expanded dataset "df_did2" to estimate a DiD regression. 
+
+```{r}
+df_did2 <- df_did2 %>%
+  mutate(
+    post = ifelse(year >= 2010, 1, 0),
+    treat = ifelse(province == "A", 1, 0),
+    post_treat = post * treat
+  )
+
+did2_simple <- lm(unemp_ob ~ treat + post + post_treat, data = df_did2)
+summary(did2_simple)
+
+```
+
+4. In the visualization for results of the event study ("event_study"), is the parallel trends assumption satisfied?
+ 
+Yes. given that the pre-treatment coefficients are around zero and statistically insignificant, the pattern supports the validity of the parallel trends assumption.
