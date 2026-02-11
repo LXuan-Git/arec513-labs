@@ -241,7 +241,7 @@ farm %>% slice_sample(prop = 0.5)     # randomly pick 50% of the data
 ```{r}
 count(farm)     # count the number of observations
 count(farm, type)     # count observations per type of farm
-count(farm, type, order = TRUE)     # add argument for order
+count(farm, type, sort = TRUE)     # add argument for sort
 count(farm, type, wt = return, sort = TRUE)     # add argument for weight
 ```
 
